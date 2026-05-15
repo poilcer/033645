@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>신소재 발견 엔진 v2.5</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/3dmol@2.0.3/build/3Dmol-min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: #111827;
+    --border: #1f2937;
+    --accent: #3b82f6;
+    --accent2: #8b5cf6;
+    --green: #10b981;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --text: #e5e7eb;
+    --muted: #6b7280;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  header {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+  header span { color: var(--muted); font-size: 0.85rem; }
+  .badge { background: var(--accent); color: white; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 600; }
+
+  .api-bar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.82rem;
+  }
+  .api-bar label { color: var(--muted); }
+  .api-bar input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    width: 220px;
+  }
+  #statusDot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+  #statusDot.ok { background: var(--green); }
+  #statusDot.err { background: var(--red); }
+
+  .main { display: grid; grid-template-columns: 380px 1fr; gap: 0; height: calc(100vh - 110px); }
+
+  /* LEFT PANEL */
+  .left-panel {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* Target properties */
+  .prop-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .prop-chip {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 0.82rem;
+    text-align: center;
+    user-select: none;
+  }
+  .prop-chip:hover { border-color: var(--accent); }
+  .prop-chip.selected { border-color: var(--accent); background: rgba(59,130,246,0.15); color: var(--accent); }
+  .prop-chip .icon { font-size: 1.2rem; display: block; margin-bottom: 4px; }
+
+  /* Candidate selector */
+  .cand-list { display: flex; flex-direction: column; gap: 8px; }
+  .cand-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .cand-item:hover { border-color: var(--accent2); }
+  .cand-item.selected { border-color: var(--accent2); background: rgba(139,92,246,0.12); }
+  .cand-item .cand-icon { font-size: 1.5rem; line-height: 1; }
+  .cand-item .cand-name { font-size: 0.88rem; font-weight: 600; }
+  .cand-item .cand-smiles { font-size: 0.72rem; color: var(--muted); margin-top: 2px; font-family: monospace; }
+  .cand-item .cand-desc { font-size: 0.75rem; color: var(--muted); margin-top: 3px; }
+
+  /* SMILES input */
+  .smiles-input-wrap { display: flex; gap: 8px; }
+  .smiles-input-wrap input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+  .smiles-input-wrap input:focus { outline: none; border-color: var(--accent); }
+
+  .btn {
+    padding: 10px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #059669; }
+  .btn-full { width: 100%; margin-top: 4px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* RIGHT PANEL */
+  .right-panel {
+    display: grid;
+    grid-template-rows: 1fr 280px;
+    overflow: hidden;
+  }
+
+  /* 3D Viewer */
+  .viewer-wrap {
+    position: relative;
+    background: #060b14;
+    border-bottom: 1px solid var(--border);
+  }
+  #viewer3d { width: 100%; height: 100%; }
+  .viewer-overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .viewer-tag {
+    background: rgba(0,0,0,0.7);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .viewer-tag span { color: var(--text); font-weight: 600; }
+  .viewer-hint {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.6);
+    padding: 6px 14px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+
+  /* Results panel */
+  .results-panel {
+    background: var(--panel);
+    overflow-y: auto;
+    padding: 16px 24px;
+  }
+
+  .results-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .results-header h3 { font-size: 0.9rem; font-weight: 700; }
+
+  /* Descriptor grid */
+  .desc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .desc-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .desc-card .label { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .desc-card .value { font-size: 1.1rem; font-weight: 700; margin-top: 2px; }
+  .desc-card .value.good { color: var(--green); }
+  .desc-card .value.warn { color: var(--yellow); }
+  .desc-card .value.bad { color: var(--red); }
+
+  /* Score bar */
+  .score-section { margin-bottom: 14px; }
+  .score-bar-wrap { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+  .score-bar-bg {
+    flex: 1;
+    height: 10px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .score-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+  .score-num { font-size: 1rem; font-weight: 700; min-width: 40px; }
+
+  /* Ranking table */
+  .rank-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  .rank-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 0.72rem; text-transform: uppercase; }
+  .rank-table td { padding: 8px; border-bottom: 1px solid #1a2030; vertical-align: middle; }
+  .rank-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .rank-badge { display: inline-block; width: 22px; height: 22px; border-radius: 50%; text-align: center; line-height: 22px; font-size: 0.72rem; font-weight: 700; }
+  .rank-1 { background: #f59e0b; color: #000; }
+  .rank-2 { background: #9ca3af; color: #000; }
+  .rank-3 { background: #b45309; color: #fff; }
+  .rank-other { background: var(--border); color: var(--muted); }
+
+  /* Alerts */
+  .alert { border-radius: 8px; padding: 10px 14px; font-size: 0.8rem; margin-top: 8px; }
+  .alert-green { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+  .alert-yellow { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); color: #fcd34d; }
+  .alert-red { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+
+  /* Tabs */
+  .tab-bar { display: flex; gap: 4px; margin-bottom: 14px; }
+  .tab {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--muted);
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-color: var(--accent); background: rgba(59,130,246,0.1); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Loading */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .placeholder-msg {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 0.88rem;
+  }
+  .placeholder-msg .big { font-size: 2.5rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>⚗️ 신소재 발견 엔진 <span class="badge">v2.5</span></h1>
+    <span>RDKit 분자 설계 · 3D 구조 시각화 · 물성 예측</span>
+  </div>
+</header>
+
+<div class="api-bar">
+  <label>RDKit API 서버:</label>
+  <input type="text" id="apiUrl" value="http://127.0.0.1:8010">
+  <span id="statusDot"></span>
+  <span id="statusText" style="color:var(--muted)">확인 중...</span>
+  <button class="btn btn-primary" style="padding:4px 12px;font-size:0.78rem;" onclick="checkServer()">재연결</button>
+</div>
+
+<div class="main">
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+
+    <!-- Step 1: Target properties -->
+    <div>
+      <div class="section-title">① 목표 물성 선택 (복수 가능)</div>
+      <div class="prop-grid" id="propGrid">
+        <div class="prop-chip" data-prop="strength" onclick="toggleProp(this)">
+          <span class="icon">💪</span>고강도
+        </div>
+        <div class="prop-chip" data-prop="thermal" onclick="toggleProp(this)">
+          <span class="icon">🔥</span>열 안정성
+        </div>
+        <div class="prop-chip" data-prop="solubility" onclick="toggleProp(this)">
+          <span class="icon">💧</span>수용성
+        </div>
+        <div class="prop-chip" data-prop="biocompat" onclick="toggleProp(this)">
+          <span class="icon">🧬</span>생체적합성
+        </div>
+        <div class="prop-chip" data-prop="eco" onclick="toggleProp(this)">
+          <span class="icon">🌱</span>친환경
+        </div>
+        <div class="prop-chip" data-prop="electric" onclick="toggleProp(this)">
+          <span class="icon">⚡</span>전기/전자
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Base candidate -->
+    <div>
+      <div class="section-title">② 기반 후보 선택</div>
+      <div class="cand-list" id="candList">
+        <div class="cand-item" data-idx="0" onclick="selectCandidate(this)">
+          <div class="cand-icon">🌾</div>
+          <div>
+            <div class="cand-name">천연섬유 복합소재</div>
+            <div class="cand-smiles">OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O</div>
+            <div class="cand-desc">셀룰로오스 기반 · 고강도 · 생분해성</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="1" onclick="selectCandidate(this)">
+          <div class="cand-icon">🧪</div>
+          <div>
+            <div class="cand-name">생분해성 고분자 (PLA)</div>
+            <div class="cand-smiles">CC(O)C(=O)O</div>
+            <div class="cand-desc">젖산 기반 · 친환경 · 생체적합</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="2" onclick="selectCandidate(this)">
+          <div class="cand-icon">🧲</div>
+          <div>
+            <div class="cand-name">이온성 액체</div>
+            <div class="cand-smiles">c1ccn(CC[N+](C)(C)C)c1</div>
+            <div class="cand-desc">이미다졸 기반 · 낮은 증기압 · 이온전도성</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="3" onclick="selectCandidate(this)">
+          <div class="cand-icon">🔬</div>
+          <div>
+            <div class="cand-name">MOF 리간드 (BDC)</div>
+            <div class="cand-smiles">OC(=O)c1ccc(C(=O)O)cc1</div>
+            <div class="cand-desc">테레프탈산 기반 · 다공성 · 가스저장</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="4" onclick="selectCandidate(this)">
+          <div class="cand-icon">💎</div>
+          <div>
+            <div class="cand-name">실록산 소재 (HMDS)</div>
+            <div class="cand-smiles">C[Si](C)(C)O[Si](C)(C)C</div>
+            <div class="cand-desc">헥사메틸디실록산 · 발수성 · 내열성</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="5" onclick="selectCandidate(this)">
+          <div class="cand-icon">🔋</div>
+          <div>
+            <div class="cand-name">전도성 고분자 (아닐린)</div>
+            <div class="cand-smiles">Nc1ccccc1</div>
+            <div class="cand-desc">폴리아닐린 단량체 · 전기전도 · 센서</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="6" onclick="selectCandidate(this)">
+          <div class="cand-icon">🩺</div>
+          <div>
+            <div class="cand-name">약물전달 캐리어 (PLGA)</div>
+            <div class="cand-smiles">CC(OC(=O)CO)C(=O)O</div>
+            <div class="cand-desc">PLGA 단위 · 생체흡수성 · DDS</div>
+          </div>
+        </div>
+        <div class="cand-item" data-idx="7" onclick="selectCandidate(this)">
+          <div class="cand-icon">🧊</div>
+          <div>
+            <div class="cand-name">에폭시 수지 (DGEBA)</div>
+            <div class="cand-smiles">C(OCC1CO1)c1ccc(OCC2CO2)cc1</div>
+            <div class="cand-desc">비스페놀-A 에폭시 · 고강도 · 접착성</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 3: Custom SMILES -->
+    <div>
+      <div class="section-title">③ 직접 입력 (선택사항)</div>
+      <div class="smiles-input-wrap">
+        <input type="text" id="customSmiles" placeholder="SMILES 직접 입력 (예: CCO)">
+        <button class="btn btn-primary" onclick="addCustom()">추가</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Analyze -->
+    <div>
+      <div class="section-title">④ 분석 실행</div>
+      <div id="selectedInfo" style="font-size:0.8rem;color:var(--muted);margin-bottom:8px;">
+        후보를 선택하세요
+      </div>
+      <button class="btn btn-green btn-full" id="analyzeBtn" onclick="runAnalysis()" disabled>
+        🔬 RDKit 분석 시작
+      </button>
+      <button class="btn btn-full" style="background:var(--border);margin-top:8px;font-size:0.8rem;" onclick="runBatch()">
+        📊 전체 후보 일괄 분석
+      </button>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- 3D Viewer -->
+    <div class="viewer-wrap">
+      <div id="viewer3d"></div>
+      <div class="viewer-overlay">
+        <div class="viewer-tag">분자: <span id="viewerName">-</span></div>
+        <div class="viewer-tag">MW: <span id="viewerMW">-</span></div>
+        <div class="viewer-tag">LogP: <span id="viewerLogP">-</span></div>
+      </div>
+      <div class="viewer-hint">마우스 드래그로 회전 · 스크롤로 줌</div>
+      <div id="viewerPlaceholder" class="placeholder-msg" style="position:absolute;inset:0;">
+        <div class="big">⚗️</div>
+        <div>후보를 선택하고 분석을 실행하면 3D 구조가 표시됩니다</div>
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="results-panel">
+      <div class="results-header">
+        <h3 id="resultsTitle">분석 결과</h3>
+        <div id="loadingSpinner" style="display:none;"><span class="spinner"></span></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('descriptors', this)">물성 지표</div>
+        <div class="tab" onclick="switchTab('ranking', this)">후보 랭킹</div>
+        <div class="tab" onclick="switchTab('report', this)">평가 리포트</div>
+      </div>
+
+      <!-- Descriptors tab -->
+      <div class="tab-content active" id="tab-descriptors">
+        <div id="descriptorContent">
+          <div style="color:var(--muted);font-size:0.82rem;">분석 결과가 여기에 표시됩니다.</div>
+        </div>
+      </div>
+
+      <!-- Ranking tab -->
+      <div class="tab-content" id="tab-ranking">
+        <div id="rankingContent">
+          <div style="color:var(--muted);font-size:0.82rem;">일괄 분석 후 랭킹이 표시됩니다.</div>
+        </div>
+      </div>
+
+      <!-- Report tab -->
+      <div class="tab-content" id="tab-report">
+        <div id="reportContent">
+          <div style="color:var(--muted);font-size:0.82rem;">분석 후 평가 리포트가 생성됩니다.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== STATE =====================
+let API = () => document.getElementById('apiUrl').value.replace(/\/$/, '');
+let selectedCandidates = new Set();
+let selectedProps = new Set();
+let batchResults = [];
+let viewer = null;
+let customCandidates = [];
+
+const CANDIDATES = [
+  { name: '천연섬유 (셀룰로오스)', smiles: 'OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O', icon: '🌾' },
+  { name: '생분해성 고분자 (PLA)', smiles: 'CC(O)C(=O)O', icon: '🧪' },
+  { name: '이온성 액체', smiles: 'c1ccn(CC[N+](C)(C)C)c1', icon: '🧲' },
+  { name: 'MOF 리간드 (BDC)', smiles: 'OC(=O)c1ccc(C(=O)O)cc1', icon: '🔬' },
+  { name: '실록산 소재 (HMDS)', smiles: 'C[Si](C)(C)O[Si](C)(C)C', icon: '💎' },
+  { name: '전도성 고분자 (아닐린)', smiles: 'Nc1ccccc1', icon: '🔋' },
+  { name: '약물전달 캐리어', smiles: 'CC(OC(=O)CO)C(=O)O', icon: '🩺' },
+  { name: '에폭시 수지 (DGEBA)', smiles: 'C(OCC1CO1)c1ccc(OCC2CO2)cc1', icon: '🧊' },
+];
+
+// ===================== SERVER CHECK =====================
+async function checkServer() {
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  dot.className = '';
+  txt.textContent = '확인 중...';
+  try {
+    const r = await fetch(API() + '/health', { signal: AbortSignal.timeout(3000) });
+    const j = await r.json();
+    dot.className = 'ok';
+    txt.textContent = j.rdkit ? 'RDKit 연결됨' : '서버 연결됨 (RDKit 없음 - 추정값 사용)';
+    txt.style.color = j.rdkit ? 'var(--green)' : 'var(--yellow)';
+  } catch {
+    dot.className = 'err';
+    txt.textContent = '서버 오프라인';
+    txt.style.color = 'var(--red)';
+  }
+}
+
+// ===================== PROPERTY TOGGLE =====================
+function toggleProp(el) {
+  el.classList.toggle('selected');
+  const p = el.dataset.prop;
+  if (selectedProps.has(p)) selectedProps.delete(p);
+  else selectedProps.add(p);
+}
+
+// ===================== CANDIDATE SELECT =====================
+function selectCandidate(el) {
+  const idx = parseInt(el.dataset.idx);
+  if (selectedCandidates.has(idx)) {
+    selectedCandidates.delete(idx);
+    el.classList.remove('selected');
+  } else {
+    selectedCandidates.add(idx);
+    el.classList.add('selected');
+  }
+  updateSelectedInfo();
+}
+
+function updateSelectedInfo() {
+  const count = selectedCandidates.size + customCandidates.length;
+  const info = document.getElementById('selectedInfo');
+  const btn = document.getElementById('analyzeBtn');
+  if (count === 0) {
+    info.textContent = '후보를 선택하세요';
+    btn.disabled = true;
+  } else {
+    const names = [];
+    selectedCandidates.forEach(i => names.push(CANDIDATES[i].name));
+    customCandidates.forEach(c => names.push(c.name));
+    info.textContent = `선택됨: ${names.join(', ')}`;
+    btn.disabled = false;
+  }
+}
+
+function addCustom() {
+  const inp = document.getElementById('customSmiles');
+  const smiles = inp.value.trim();
+  if (!smiles) return;
+  customCandidates.push({ name: `커스텀: ${smiles.substring(0,12)}...`, smiles });
+  inp.value = '';
+  updateSelectedInfo();
+}
+
+// ===================== ANALYSIS =====================
+async function runAnalysis() {
+  const allCandidates = getAllSelectedCandidates();
+  if (!allCandidates.length) return;
+
+  showLoading(true);
+
+  // Analyze only first selected for single view, batch for all
+  if (allCandidates.length === 1) {
+    await analyzeSingle(allCandidates[0]);
+  } else {
+    await runBatchWithList(allCandidates);
+  }
+
+  showLoading(false);
+}
+
+async function analyzeSingle(cand) {
+  try {
+    const r = await fetch(API() + '/analyze_smiles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ smiles: cand.smiles, candidate_name: cand.name }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const j = await r.json();
+    if (!j.ok) { alert('분석 오류: ' + j.error); return; }
+
+    renderDescriptors(j.descriptors, cand.name);
+    renderReport([{ name: cand.name, smiles: cand.smiles, descriptors: j.descriptors, ok: true }]);
+    render3D(cand.smiles, cand.name, j.descriptors);
+    updateViewerTags(cand.name, j.descriptors);
+    switchTab('descriptors', document.querySelector('.tab'));
+  } catch (e) {
+    alert('서버 연결 실패: ' + e.message);
+  }
+}
+
+async function runBatch() {
+  const allCandidates = getAllSelectedCandidates().length
+    ? getAllSelectedCandidates()
+    : CANDIDATES.map(c => ({ ...c }));
+  showLoading(true);
+  await runBatchWithList(allCandidates);
+  showLoading(false);
+}
+
+async function runBatchWithList(list) {
+  try {
+    const r = await fetch(API() + '/batch_analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ candidates: list.map(c => ({ smiles: c.smiles, candidate_name: c.name })) }),
+      signal: AbortSignal.timeout(20000),
+    });
+    const j = await r.json();
+    if (!j.ok) { alert('오류'); return; }
+
+    batchResults = j.results;
+    renderRanking(j.results);
+    renderReport(j.results);
+
+    if (j.results.length > 0 && j.results[0].ok) {
+      const top = j.results[0];
+      renderDescriptors(top.descriptors, top.name);
+      render3D(top.smiles, top.name, top.descriptors);
+      updateViewerTags(top.name, top.descriptors);
+    }
+    switchTab('ranking', document.querySelectorAll('.tab')[1]);
+  } catch (e) {
+    alert('서버 연결 실패: ' + e.message);
+  }
+}
+
+function getAllSelectedCandidates() {
+  const list = [];
+  selectedCandidates.forEach(i => list.push({ ...CANDIDATES[i] }));
+  customCandidates.forEach(c => list.push(c));
+  return list;
+}
+
+// ===================== RENDER DESCRIPTORS =====================
+function renderDescriptors(desc, name) {
+  document.getElementById('resultsTitle').textContent = name || '분석 결과';
+
+  function cls(val, good, ok) {
+    if (val <= good) return 'good';
+    if (val <= ok) return 'warn';
+    return 'bad';
+  }
+
+  const html = `
+    <div class="score-section">
+      <div class="section-title">종합 소재 점수</div>
+      <div class="score-bar-wrap">
+        <div class="score-bar-bg">
+          <div class="score-bar-fill" style="width:${desc.material_score}%"></div>
+        </div>
+        <div class="score-num" style="color:${scoreColor(desc.material_score)}">${desc.material_score}</div>
+      </div>
+    </div>
+
+    <div class="desc-grid">
+      <div class="desc-card">
+        <div class="label">분자량 (MW)</div>
+        <div class="value ${cls(desc.mw, 300, 500)}">${desc.mw}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">LogP (소수성)</div>
+        <div class="value ${Math.abs(desc.logp) < 2 ? 'good' : Math.abs(desc.logp) < 5 ? 'warn' : 'bad'}">${desc.logp}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">TPSA (표면적)</div>
+        <div class="value ${cls(desc.tpsa, 60, 140)}">${desc.tpsa}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">HBD (수소결합 공여)</div>
+        <div class="value ${cls(desc.hbd, 2, 5)}">${desc.hbd}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">HBA (수소결합 수용)</div>
+        <div class="value ${cls(desc.hba, 5, 10)}">${desc.hba}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">QED (약물유사성)</div>
+        <div class="value ${desc.qed > 0.6 ? 'good' : desc.qed > 0.3 ? 'warn' : 'bad'}">${desc.qed}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">FSP3 (sp3 비율)</div>
+        <div class="value ${desc.fsp3 > 0.4 ? 'good' : desc.fsp3 > 0.2 ? 'warn' : 'bad'}">${desc.fsp3}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">환 수 (rings)</div>
+        <div class="value">${desc.ring_count}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">방향족 환</div>
+        <div class="value">${desc.aromatic_rings}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">중원자 수</div>
+        <div class="value">${desc.heavy_atoms}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">회전가능 결합</div>
+        <div class="value ${cls(desc.rotatable_bonds, 5, 10)}">${desc.rotatable_bonds}</div>
+      </div>
+      <div class="desc-card">
+        <div class="label">합성 난이도 (SA)</div>
+        <div class="value ${desc.sa_score < 4 ? 'good' : desc.sa_score < 7 ? 'warn' : 'bad'}">${desc.sa_score}</div>
+      </div>
+    </div>
+
+    <div class="${desc.lipinski_pass ? 'alert alert-green' : 'alert alert-yellow'}">
+      ${desc.lipinski_pass ? '✅ Lipinski Rule of 5 통과 — 약물/소재 유사성 우수' : '⚠️ Lipinski Rule of 5 불만족 — 흡수/용해도 주의'}
+    </div>
+    ${desc.note ? `<div class="alert alert-yellow" style="margin-top:6px;">ℹ️ ${desc.note}</div>` : ''}
+  `;
+  document.getElementById('descriptorContent').innerHTML = html;
+}
+
+function scoreColor(s) {
+  if (s >= 70) return 'var(--green)';
+  if (s >= 45) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+// ===================== RENDER RANKING =====================
+function renderRanking(results) {
+  if (!results.length) return;
+  let rows = results.map((r, i) => {
+    const rank = i + 1;
+    const badgeCls = rank <= 3 ? `rank-${rank}` : 'rank-other';
+    const score = r.ok ? r.descriptors.material_score : '-';
+    const mw = r.ok ? r.descriptors.mw : '-';
+    const logp = r.ok ? r.descriptors.logp : '-';
+    const qed = r.ok ? r.descriptors.qed : '-';
+    return `
+      <tr style="cursor:pointer" onclick="viewFromRank(${i})">
+        <td><span class="rank-badge ${badgeCls}">${rank}</span></td>
+        <td><strong>${r.name}</strong><br><span style="font-size:0.7rem;color:var(--muted);font-family:monospace">${r.smiles.substring(0,20)}${r.smiles.length>20?'...':''}</span></td>
+        <td><strong style="color:${scoreColor(score)}">${score}</strong></td>
+        <td>${mw}</td>
+        <td>${logp}</td>
+        <td>${qed}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('rankingContent').innerHTML = `
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">행 클릭 시 3D 구조 및 상세 물성 표시</div>
+    <table class="rank-table">
+      <thead>
+        <tr>
+          <th>#</th><th>후보명</th><th>종합점수</th><th>MW</th><th>LogP</th><th>QED</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function viewFromRank(idx) {
+  const r = batchResults[idx];
+  if (!r || !r.ok) return;
+  renderDescriptors(r.descriptors, r.name);
+  render3D(r.smiles, r.name, r.descriptors);
+  updateViewerTags(r.name, r.descriptors);
+  switchTab('descriptors', document.querySelector('.tab'));
+}
+
+// ===================== RENDER REPORT =====================
+function renderReport(results) {
+  const top = results.filter(r => r.ok).sort((a,b) => b.descriptors.material_score - a.descriptors.material_score)[0];
+  if (!top) return;
+  const d = top.descriptors;
+
+  const warnings = [];
+  if (d.mw > 500) warnings.push('⚠️ 분자량 500 초과 — 막 투과성 저하 가능');
+  if (Math.abs(d.logp) > 5) warnings.push('⚠️ LogP 극단 — 용해도 문제 가능');
+  if (d.sa_score > 7) warnings.push('⚠️ 합성 난이도 높음 — 다단계 합성 필요');
+  if (d.tpsa > 140) warnings.push('⚠️ TPSA 140 초과 — 세포막 투과 어려움');
+
+  const nextSteps = [];
+  if (d.qed > 0.5) nextSteps.push('✅ QED 우수 — 약물전달 시스템 응용 검토');
+  if (d.fsp3 > 0.4) nextSteps.push('✅ 높은 sp3 비율 — 3D 구조 다양성 확보');
+  if (d.aromatic_rings >= 1) nextSteps.push('✅ 방향족 환 존재 — π-π 스태킹 활용 가능');
+  if (d.ring_count === 0) nextSteps.push('🔧 환형 구조 추가로 강도/안정성 개선 검토');
+  nextSteps.push('🔬 DFT 계산으로 HOMO-LUMO 갭 검증 권장');
+  nextSteps.push('🧫 세포독성 시험 (MTT assay) 계획 수립');
+
+  document.getElementById('reportContent').innerHTML = `
+    <div style="margin-bottom:12px;">
+      <div class="section-title">최우수 후보</div>
+      <div style="font-size:1rem;font-weight:700;margin-top:4px;">${top.name}</div>
+      <div style="font-size:0.78rem;color:var(--muted);font-family:monospace;margin-top:2px;">${top.smiles}</div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div class="section-title">종합 평가</div>
+      <div style="font-size:0.82rem;margin-top:6px;line-height:1.6;">
+        종합 소재 점수 <strong style="color:${scoreColor(d.material_score)}">${d.material_score}/100</strong>으로,
+        ${d.material_score >= 70 ? '신소재 응용 가능성이 높습니다.' : d.material_score >= 45 ? '추가 구조 최적화가 권장됩니다.' : '상당한 구조 개선이 필요합니다.'}
+        Lipinski 규칙 ${d.lipinski_pass ? '통과' : '미통과'}, 합성 난이도 ${d.sa_score}/10, 환경 점수 ${d.env_score}/10.
+      </div>
+    </div>
+
+    ${warnings.length ? `
+    <div style="margin-bottom:12px;">
+      <div class="section-title">주의사항</div>
+      ${warnings.map(w => `<div class="alert alert-yellow" style="margin-top:6px;">${w}</div>`).join('')}
+    </div>` : `<div class="alert alert-green" style="margin-bottom:12px;">✅ 주요 경고사항 없음</div>`}
+
+    <div>
+      <div class="section-title">다음 검증 단계</div>
+      ${nextSteps.map(s => `<div style="font-size:0.8rem;padding:5px 0;border-bottom:1px solid var(--border);">${s}</div>`).join('')}
+    </div>
+
+    ${results.length > 1 ? `
+    <div style="margin-top:12px;">
+      <div class="section-title">전체 후보 요약</div>
+      <div style="font-size:0.8rem;color:var(--muted);">총 ${results.length}개 분석 완료 · 평균 점수: ${
+        Math.round(results.filter(r=>r.ok).reduce((s,r)=>s+r.descriptors.material_score,0) / results.filter(r=>r.ok).length)
+      }점</div>
+    </div>` : ''}
+  `;
+}
+
+// ===================== 3D VIEWER =====================
+function render3D(smiles, name, desc) {
+  document.getElementById('viewerPlaceholder').style.display = 'none';
+
+  // Use SDF from pubchem for known molecules, or generate coords from SMILES
+  // We use 3Dmol.js with SMILES -> 3D via pubchem REST
+  const container = document.getElementById('viewer3d');
+  container.innerHTML = '';
+
+  if (!viewer) {
+    viewer = $3Dmol.createViewer(container, {
+      backgroundColor: '#060b14',
+      antialias: true,
+    });
+  } else {
+    viewer.clear();
+  }
+
+  // Fetch SDF from PubChem
+  const encoded = encodeURIComponent(smiles);
+  fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF?record_type=3d`)
+    .then(r => r.ok ? r.text() : null)
+    .then(sdf => {
+      viewer.clear();
+      if (sdf && sdf.includes('V2000')) {
+        viewer.addModel(sdf, 'sdf');
+      } else {
+        // Fallback: 2D SDF
+        fetch(`https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/smiles/${encoded}/SDF`)
+          .then(r2 => r2.ok ? r2.text() : null)
+          .then(sdf2 => {
+            if (sdf2) viewer.addModel(sdf2, 'sdf');
+            else {
+              // Final fallback: try by name
+              viewer.addModel(smiles, 'smiles');
+            }
+            styleViewer(desc);
+          })
+          .catch(() => { viewer.addModel(smiles, 'smiles'); styleViewer(desc); });
+        return;
+      }
+      styleViewer(desc);
+    })
+    .catch(() => {
+      viewer.addModel(smiles, 'smiles');
+      styleViewer(desc);
+    });
+}
+
+function styleViewer(desc) {
+  viewer.setStyle({}, {
+    stick: { radius: 0.12, colorscheme: 'Jmol' },
+    sphere: { scale: 0.25, colorscheme: 'Jmol' },
+  });
+  viewer.zoomTo();
+  viewer.rotate(30, 'y');
+  viewer.rotate(15, 'x');
+  viewer.render();
+}
+
+function updateViewerTags(name, desc) {
+  document.getElementById('viewerName').textContent = name;
+  document.getElementById('viewerMW').textContent = desc.mw;
+  document.getElementById('viewerLogP').textContent = desc.logp;
+}
+
+// ===================== TABS =====================
+function switchTab(id, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (el) el.classList.add('active');
+  else {
+    const tabs = { descriptors: 0, ranking: 1, report: 2 };
+    document.querySelectorAll('.tab')[tabs[id]]?.classList.add('active');
+  }
+}
+
+function showLoading(on) {
+  document.getElementById('loadingSpinner').style.display = on ? '' : 'none';
+  document.getElementById('analyzeBtn').disabled = on;
+}
+
+// ===================== INIT =====================
+window.addEventListener('DOMContentLoaded', () => {
+  checkServer();
+  setInterval(checkServer, 30000);
+});
+</script>
+</body>
+</html>
