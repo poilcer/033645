@@ -7,205 +7,196 @@
 <script src="https://cdn.jsdelivr.net/npm/@rdkit/rdkit@2024.3.2/Code/MinimalLib/dist/RDKit_minimal.js"></script>
 <style>
 :root {
-  --bg: #0a0e1a;
-  --panel: #111827;
-  --border: #1f2937;
-  --accent: #3b82f6;
-  --accent2: #8b5cf6;
-  --green: #10b981;
-  --red: #ef4444;
-  --yellow: #f59e0b;
-  --text: #e5e7eb;
-  --muted: #6b7280;
+  --bg:#0a0e1a; --panel:#111827; --border:#1f2937;
+  --accent:#3b82f6; --accent2:#8b5cf6; --accent3:#ec4899;
+  --green:#10b981; --red:#ef4444; --yellow:#f59e0b;
+  --text:#e5e7eb; --muted:#6b7280;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
 
-/* ── HEADER ── */
-header {
-  background: linear-gradient(135deg, #0f172a, #1e1b4b);
-  border-bottom: 1px solid var(--border);
-  padding: 13px 16px;
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-}
-header h1 { font-size: 1.05rem; font-weight: 700; }
-header .sub { color: var(--muted); font-size: 0.75rem; }
-@media(min-width:600px){ header { padding: 16px 28px; } header h1 { font-size: 1.3rem; } }
-.badge { background: var(--accent); color: #fff; padding: 2px 9px; border-radius: 99px; font-size: 0.72rem; font-weight: 700; }
-.rdkit-badge { background: #064e3b; border: 1px solid var(--green); color: #6ee7b7; padding: 2px 9px; border-radius: 99px; font-size: 0.7rem; }
+/* HEADER */
+header{background:linear-gradient(135deg,#0f172a,#1e1b4b);border-bottom:1px solid var(--border);
+  padding:12px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+header h1{font-size:1.05rem;font-weight:700;}
+@media(min-width:600px){header{padding:15px 26px;}header h1{font-size:1.25rem;}}
+.badge{background:var(--accent);color:#fff;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;}
+.rbadge-ok{background:#064e3b;border:1px solid var(--green);color:#6ee7b7;padding:2px 8px;border-radius:99px;font-size:.68rem;}
+.rbadge-wait{background:#1c1917;border:1px solid var(--yellow);color:#fcd34d;padding:2px 8px;border-radius:99px;font-size:.68rem;}
 
-/* ── STATUS BAR ── */
-.status-bar {
-  background: var(--panel); border-bottom: 1px solid var(--border);
-  padding: 7px 16px; display: flex; align-items: center; gap: 8px; font-size: 0.78rem; flex-wrap: wrap;
-}
-@media(min-width:600px){ .status-bar { padding: 8px 28px; } }
-#rdkitDot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
-#rdkitDot.ok { background: var(--green); }
-#rdkitDot.err { background: var(--red); }
-.spinner-sm { width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .6s linear infinite; display: inline-block; }
-@keyframes spin { to { transform: rotate(360deg); } }
+/* STATUS */
+.sbar{background:var(--panel);border-bottom:1px solid var(--border);
+  padding:6px 16px;display:flex;align-items:center;gap:8px;font-size:.76rem;flex-wrap:wrap;}
+@media(min-width:600px){.sbar{padding:7px 26px;}}
+#rdot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background .3s;}
+#rdot.ok{background:var(--green);}#rdot.err{background:var(--red);}
 
-/* ── LAYOUT ── */
-.main { display: flex; flex-direction: column; }
-@media(min-width:860px){
-  .main { display: grid; grid-template-columns: 370px 1fr; height: calc(100vh - 90px); }
-}
+/* LAYOUT */
+.main{display:flex;flex-direction:column;}
+@media(min-width:860px){.main{display:grid;grid-template-columns:370px 1fr;height:calc(100vh - 88px);}}
 
-/* ── LEFT PANEL ── */
-.left-panel {
-  background: var(--panel); border-right: 1px solid var(--border);
-  overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px;
-}
-@media(min-width:860px){ .left-panel { padding: 20px; } }
+/* LEFT */
+.lp{background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:16px;}
+@media(min-width:860px){.lp{padding:18px;}}
 
-.sec-title {
-  font-size: 0.66rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
-  color: var(--muted); margin-bottom: 8px;
-}
+/* Mode toggle */
+.mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.mtab{padding:9px;text-align:center;cursor:pointer;font-size:.8rem;font-weight:600;color:var(--muted);transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.mtab.active{background:var(--accent);color:#fff;}
 
-/* props */
-.prop-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-@media(min-width:400px){ .prop-grid { grid-template-columns: repeat(3, 1fr); } }
-.prop-chip {
-  border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px;
-  cursor: pointer; font-size: 0.74rem; text-align: center; user-select: none;
-  transition: all .15s; -webkit-tap-highlight-color: transparent;
-}
-.prop-chip:hover { border-color: var(--accent); }
-.prop-chip.selected { border-color: var(--accent); background: rgba(59,130,246,.15); color: var(--accent); }
-.prop-chip .ic { font-size: 1.1rem; display: block; margin-bottom: 2px; }
+.sec{display:none;flex-direction:column;gap:14px;}
+.sec.active{display:flex;}
+.stitle{font-size:.64rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);margin-bottom:7px;}
 
-/* candidates */
-.cand-list { display: flex; flex-direction: column; gap: 6px; }
-.cand-item {
-  border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
-  cursor: pointer; display: flex; align-items: flex-start; gap: 9px;
-  transition: all .15s; -webkit-tap-highlight-color: transparent;
-}
-.cand-item:hover { border-color: var(--accent2); }
-.cand-item.selected { border-color: var(--accent2); background: rgba(139,92,246,.12); }
-.cand-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
-.cand-name { font-size: 0.84rem; font-weight: 600; }
-.cand-smiles { font-size: 0.68rem; color: var(--muted); margin-top: 1px; font-family: monospace; word-break: break-all; }
-.cand-desc { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
+/* Prop chips */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.pchip{border:1px solid var(--border);border-radius:7px;padding:7px 4px;cursor:pointer;font-size:.72rem;
+  text-align:center;user-select:none;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.pchip:hover{border-color:var(--accent);}
+.pchip.sel{border-color:var(--accent);background:rgba(59,130,246,.15);color:var(--accent);}
+.pchip .ic{font-size:1rem;display:block;margin-bottom:2px;}
 
-/* custom SMILES */
-.smiles-row { display: flex; gap: 6px; }
-.smiles-row input {
-  flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--text);
-  padding: 9px 10px; border-radius: 7px; font-family: monospace; font-size: 0.82rem; min-width: 0;
-}
-.smiles-row input:focus { outline: none; border-color: var(--accent); }
+/* Candidates */
+.clist{display:flex;flex-direction:column;gap:5px;}
+.ci{border:1px solid var(--border);border-radius:7px;padding:9px 11px;cursor:pointer;
+  display:flex;align-items:flex-start;gap:8px;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.ci:hover{border-color:var(--accent2);}
+.ci.sel{border-color:var(--accent2);background:rgba(139,92,246,.12);}
+.ci .ico{font-size:1.3rem;line-height:1;flex-shrink:0;}
+.ci .cn{font-size:.82rem;font-weight:600;}
+.ci .cs{font-size:.66rem;color:var(--muted);margin-top:1px;font-family:monospace;word-break:break-all;}
+.ci .cd{font-size:.7rem;color:var(--muted);margin-top:2px;}
 
-/* buttons */
-.btn {
-  padding: 11px 16px; border: none; border-radius: 8px; cursor: pointer;
-  font-size: 0.84rem; font-weight: 600; transition: all .15s;
-  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-}
-.btn-primary { background: var(--accent); color: #fff; }
-.btn-primary:hover { background: #2563eb; }
-.btn-green { background: var(--green); color: #fff; }
-.btn-green:hover { background: #059669; }
-.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
-.btn-full { width: 100%; margin-top: 4px; }
-.btn:disabled { opacity: .45; cursor: not-allowed; }
+/* ── DESIGN MODE ── */
+.base-sel{display:flex;flex-direction:column;gap:5px;}
+.bsi{border:1px solid var(--border);border-radius:7px;padding:8px 10px;cursor:pointer;
+  display:flex;align-items:center;gap:8px;font-size:.8rem;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.bsi:hover{border-color:var(--accent3);}
+.bsi.sel{border-color:var(--accent3);background:rgba(236,72,153,.12);}
 
-/* ── RIGHT PANEL ── */
-.right-panel { display: flex; flex-direction: column; overflow: hidden; }
-@media(min-width:860px){ .right-panel { display: grid; grid-template-rows: 1fr 300px; } }
+/* Building blocks */
+.bb-grid{display:flex;flex-wrap:wrap;gap:5px;}
+.bb{border:1px solid var(--border);border-radius:6px;padding:5px 9px;cursor:pointer;font-size:.72rem;
+  font-family:monospace;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.bb:hover{border-color:var(--accent3);color:var(--accent3);}
+.bb.sel{border-color:var(--accent3);background:rgba(236,72,153,.15);color:var(--accent3);}
+.bb .effect{font-size:.6rem;color:var(--muted);display:block;font-family:sans-serif;}
 
-/* ── VIEWER ── */
-.viewer-wrap {
-  position: relative; background: #050a12;
-  border-bottom: 1px solid var(--border);
-  height: 280px; flex-shrink: 0;
-}
-@media(min-width:600px){ .viewer-wrap { height: 340px; } }
-@media(min-width:860px){ .viewer-wrap { height: auto; } }
+/* Strategy */
+.strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.sg{border:1px solid var(--border);border-radius:7px;padding:8px 10px;cursor:pointer;font-size:.76rem;
+  font-weight:600;text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent;color:var(--muted);}
+.sg:hover{border-color:var(--accent);}
+.sg.sel{border-color:var(--accent);background:rgba(59,130,246,.15);color:var(--accent);}
+.sg .si{font-size:1.1rem;display:block;margin-bottom:3px;}
 
-#molSvg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-#molSvg svg { max-height: 100%; max-width: 100%; }
+/* SMILES row */
+.srow{display:flex;gap:6px;}
+.srow input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:8px 10px;border-radius:7px;font-family:monospace;font-size:.8rem;min-width:0;}
+.srow input:focus{outline:none;border-color:var(--accent);}
 
-.viewer-tags {
-  position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap;
-}
-.vtag {
-  background: rgba(0,0,0,.75); border: 1px solid var(--border);
-  border-radius: 6px; padding: 3px 8px; font-size: 0.7rem; color: var(--muted);
-}
-.vtag b { color: var(--text); }
+/* Buttons */
+.btn{padding:11px 14px;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:600;
+  transition:all .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.btn-p{background:var(--accent);color:#fff;}.btn-p:hover{background:#2563eb;}
+.btn-g{background:var(--green);color:#fff;}.btn-g:hover{background:#059669;}
+.btn-m{background:var(--accent3);color:#fff;}.btn-m:hover{background:#db2777;}
+.btn-o{background:transparent;border:1px solid var(--border);color:var(--text);}
+.btn-o:hover{border-color:var(--accent);color:var(--accent);}
+.btn-f{width:100%;margin-top:4px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 
-.viewer-hint {
-  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
-  background: rgba(0,0,0,.6); padding: 4px 12px; border-radius: 99px;
-  font-size: 0.68rem; color: var(--muted); white-space: nowrap; pointer-events: none;
-}
+/* RIGHT */
+.rp{display:flex;flex-direction:column;overflow:hidden;}
+@media(min-width:860px){.rp{display:grid;grid-template-rows:1fr 320px;}}
 
-#viewerPlaceholder {
-  position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: .82rem;
-}
-#viewerPlaceholder .big { font-size: 2.8rem; }
+/* Viewer */
+.vw{position:relative;background:#050a12;border-bottom:1px solid var(--border);height:260px;flex-shrink:0;}
+@media(min-width:600px){.vw{height:320px;}}
+@media(min-width:860px){.vw{height:auto;}}
+#molSvg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+#molSvg svg{max-width:100%;max-height:100%;}
+.vtags{position:absolute;top:10px;left:10px;display:flex;gap:5px;flex-wrap:wrap;}
+.vtag{background:rgba(0,0,0,.78);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:.68rem;color:var(--muted);}
+.vtag b{color:var(--text);}
+.vhint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.6);padding:3px 12px;border-radius:99px;font-size:.66rem;color:var(--muted);white-space:nowrap;pointer-events:none;}
+#vph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);font-size:.8rem;}
+#vph .big{font-size:2.5rem;}
 
-/* ── RESULTS ── */
-.results-panel { background: var(--panel); overflow-y: auto; padding: 14px 16px; }
-@media(min-width:600px){ .results-panel { padding: 16px 22px; } }
+/* Results */
+.res{background:var(--panel);overflow-y:auto;padding:13px 15px;}
+@media(min-width:600px){.res{padding:15px 20px;}}
+.rh{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;}
+.rh h3{font-size:.86rem;font-weight:700;}
+.spin{width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .6s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
 
-.rp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.rp-header h3 { font-size: 0.88rem; font-weight: 700; }
+/* Tabs */
+.tabs{display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap;}
+.tab{padding:5px 10px;border-radius:5px;font-size:.73rem;cursor:pointer;color:var(--muted);
+  border:1px solid transparent;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent);border-color:var(--accent);background:rgba(59,130,246,.1);}
+.tc{display:none;}.tc.active{display:block;}
 
-/* tabs */
-.tab-bar { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
-.tab {
-  padding: 5px 12px; border-radius: 6px; font-size: 0.76rem; cursor: pointer;
-  color: var(--muted); border: 1px solid transparent; transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--accent); border-color: var(--accent); background: rgba(59,130,246,.1); }
-.tab-content { display: none; }
-.tab-content.active { display: block; }
+/* Score */
+.score-sec{margin-bottom:10px;}
+.srow2{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.sbg{flex:1;height:8px;background:var(--border);border-radius:99px;overflow:hidden;}
+.sfill{height:100%;border-radius:99px;transition:width .7s ease;background:linear-gradient(90deg,var(--accent),var(--accent2));}
+.snum{font-size:.95rem;font-weight:700;min-width:34px;}
 
-/* score bar */
-.score-wrap { margin-bottom: 12px; }
-.score-row { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
-.score-bg { flex: 1; height: 9px; background: var(--border); border-radius: 99px; overflow: hidden; }
-.score-fill { height: 100%; border-radius: 99px; transition: width .7s ease; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
-.score-num { font-size: 1rem; font-weight: 700; min-width: 36px; }
+/* Descriptor grid */
+.dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:9px;}
+@media(min-width:480px){.dgrid{grid-template-columns:repeat(3,1fr);}}
+.dc{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 9px;}
+.dc .dl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+.dc .dv{font-size:.95rem;font-weight:700;margin-top:1px;}
+.good{color:var(--green);}.warn{color:var(--yellow);}.bad{color:var(--red);}
 
-/* desc grid */
-.desc-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-bottom: 10px; }
-@media(min-width:500px){ .desc-grid { grid-template-columns: repeat(3, 1fr); } }
-.desc-card { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; }
-.desc-card .lbl { font-size: 0.64rem; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; }
-.desc-card .val { font-size: 1rem; font-weight: 700; margin-top: 1px; }
-.val.good { color: var(--green); }
-.val.warn { color: var(--yellow); }
-.val.bad  { color: var(--red); }
+/* Rank table */
+.rscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.rtable{width:100%;border-collapse:collapse;font-size:.74rem;min-width:340px;}
+.rtable th{text-align:left;color:var(--muted);font-weight:600;padding:5px 5px;border-bottom:1px solid var(--border);font-size:.64rem;text-transform:uppercase;white-space:nowrap;}
+.rtable td{padding:6px 5px;border-bottom:1px solid #161e2e;vertical-align:middle;}
+.rtable tr:hover td{background:rgba(255,255,255,.02);}
+.rk{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:.68rem;font-weight:700;}
+.rk1{background:#f59e0b;color:#000;}.rk2{background:#9ca3af;color:#000;}
+.rk3{background:#b45309;color:#fff;}.rkx{background:var(--border);color:var(--muted);}
 
-/* rank table */
-.rank-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.rank-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; min-width: 360px; }
-.rank-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 5px 6px; border-bottom: 1px solid var(--border); font-size: 0.66rem; text-transform: uppercase; white-space: nowrap; }
-.rank-table td { padding: 7px 6px; border-bottom: 1px solid #161e2e; vertical-align: middle; }
-.rank-table tr:hover td { background: rgba(255,255,255,.02); }
-.rbadge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 700; }
-.r1 { background: #f59e0b; color: #000; }
-.r2 { background: #9ca3af; color: #000; }
-.r3 { background: #b45309; color: #fff; }
-.rx { background: var(--border); color: var(--muted); }
+/* Generated grid */
+.gen-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+@media(min-width:480px){.gen-grid{grid-template-columns:repeat(3,1fr);}}
+.gen-card{background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all .15s;}
+.gen-card:hover{border-color:var(--accent3);}
+.gen-card.top{border-color:var(--green);}
+.gen-svg{background:#050a12;height:90px;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+.gen-svg svg{max-width:100%;max-height:88px;}
+.gen-info{padding:6px 8px;}
+.gen-name{font-size:.66rem;color:var(--muted);word-break:break-all;font-family:monospace;margin-bottom:2px;}
+.gen-score{font-size:.82rem;font-weight:700;}
+.gen-badge{font-size:.6rem;padding:1px 5px;border-radius:4px;display:inline-block;margin-top:2px;}
+.gb-new{background:rgba(236,72,153,.2);color:#f9a8d4;}
+.gb-top{background:rgba(16,185,129,.2);color:#6ee7b7;}
 
-/* alerts */
-.alert { border-radius: 7px; padding: 8px 12px; font-size: 0.78rem; margin-top: 6px; }
-.a-green  { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.3); color: #6ee7b7; }
-.a-yellow { background: rgba(245,158,11,.1);  border: 1px solid rgba(245,158,11,.3);  color: #fcd34d; }
-.a-red    { background: rgba(239,68,68,.1);   border: 1px solid rgba(239,68,68,.3);   color: #fca5a5; }
+/* Alerts */
+.alert{border-radius:6px;padding:8px 11px;font-size:.76rem;margin-top:5px;}
+.ag{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;}
+.ay{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d;}
+.ar{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+.am{background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.3);color:#f9a8d4;}
 
-/* mol2d overlay canvas */
-#mol2dCanvas { width:100%; height:100%; }
+/* Progress bar for evolution */
+.evo-bar{margin:8px 0;}
+.evo-label{font-size:.72rem;color:var(--muted);margin-bottom:4px;}
+.evo-bg{height:6px;background:var(--border);border-radius:99px;overflow:hidden;}
+.evo-fill{height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent2));border-radius:99px;transition:width .4s;}
+
+/* combo indicator */
+.combo-arrow{text-align:center;font-size:.9rem;color:var(--muted);padding:4px 0;}
 </style>
 </head>
 <body>
@@ -213,518 +204,802 @@ header .sub { color: var(--muted); font-size: 0.75rem; }
 <header>
   <div>
     <h1>⚗️ 신소재 발견 엔진 <span class="badge">v2.5</span></h1>
-    <div class="sub">RDKit.js 분자 설계 · 2D/3D 구조 · 물성 예측</div>
   </div>
-  <span class="rdkit-badge" id="rdkitLabel">RDKit 로딩 중...</span>
+  <span id="rlabel" class="rbadge-wait">RDKit.js 로딩 중…</span>
 </header>
 
-<div class="status-bar">
-  <span id="rdkitDot"></span>
-  <span id="rdkitStatus" style="color:var(--muted)">RDKit WebAssembly 초기화 중...</span>
+<div class="sbar">
+  <span id="rdot"></span>
+  <span id="rstat" style="color:var(--muted)">RDKit WebAssembly 초기화 중…</span>
 </div>
 
 <div class="main">
 
-  <!-- ════ LEFT ════ -->
-  <div class="left-panel">
+<!-- ══════════════ LEFT ══════════════ -->
+<div class="lp">
 
-    <div>
-      <div class="sec-title">① 목표 물성 (복수 가능)</div>
-      <div class="prop-grid">
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="strength"><span class="ic">💪</span>고강도</div>
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="thermal"><span class="ic">🔥</span>열안정</div>
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="solubility"><span class="ic">💧</span>수용성</div>
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="biocompat"><span class="ic">🧬</span>생체적합</div>
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="eco"><span class="ic">🌱</span>친환경</div>
-        <div class="prop-chip" onclick="toggleProp(this)" data-prop="electric"><span class="ic">⚡</span>전기전자</div>
-      </div>
-    </div>
-
-    <div>
-      <div class="sec-title">② 기반 후보 선택 (복수 가능)</div>
-      <div class="cand-list" id="candList">
-        <div class="cand-item" data-idx="0" onclick="toggleCand(this)">
-          <div class="cand-icon">🌾</div>
-          <div><div class="cand-name">천연섬유 (셀룰로오스)</div>
-          <div class="cand-smiles">OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O</div>
-          <div class="cand-desc">고강도 · 생분해성 · 수소결합 풍부</div></div>
-        </div>
-        <div class="cand-item" data-idx="1" onclick="toggleCand(this)">
-          <div class="cand-icon">🧪</div>
-          <div><div class="cand-name">생분해성 고분자 (PLA)</div>
-          <div class="cand-smiles">CC(O)C(=O)O</div>
-          <div class="cand-desc">젖산 단량체 · 친환경 · 생체흡수성</div></div>
-        </div>
-        <div class="cand-item" data-idx="2" onclick="toggleCand(this)">
-          <div class="cand-icon">🧲</div>
-          <div><div class="cand-name">이온성 액체 (ImBr)</div>
-          <div class="cand-smiles">c1cc[n+](CC)c(c1)C.[Br-]</div>
-          <div class="cand-desc">이미다졸 기반 · 이온전도성 · 낮은 증기압</div></div>
-        </div>
-        <div class="cand-item" data-idx="3" onclick="toggleCand(this)">
-          <div class="cand-icon">🔬</div>
-          <div><div class="cand-name">MOF 리간드 (BDC)</div>
-          <div class="cand-smiles">OC(=O)c1ccc(C(=O)O)cc1</div>
-          <div class="cand-desc">테레프탈산 · 다공성 · 가스저장</div></div>
-        </div>
-        <div class="cand-item" data-idx="4" onclick="toggleCand(this)">
-          <div class="cand-icon">💎</div>
-          <div><div class="cand-name">실록산 소재 (HMDS)</div>
-          <div class="cand-smiles">C[Si](C)(C)O[Si](C)(C)C</div>
-          <div class="cand-desc">발수성 · 내열성 · 유연성</div></div>
-        </div>
-        <div class="cand-item" data-idx="5" onclick="toggleCand(this)">
-          <div class="cand-icon">🔋</div>
-          <div><div class="cand-name">전도성 고분자 (아닐린)</div>
-          <div class="cand-smiles">Nc1ccccc1</div>
-          <div class="cand-desc">폴리아닐린 단량체 · 전기전도 · 센서</div></div>
-        </div>
-        <div class="cand-item" data-idx="6" onclick="toggleCand(this)">
-          <div class="cand-icon">🩺</div>
-          <div><div class="cand-name">약물전달 캐리어 (PLGA)</div>
-          <div class="cand-smiles">CC(OC(=O)CO)C(=O)O</div>
-          <div class="cand-desc">생체흡수성 · DDS · 서방형 방출</div></div>
-        </div>
-        <div class="cand-item" data-idx="7" onclick="toggleCand(this)">
-          <div class="cand-icon">🧊</div>
-          <div><div class="cand-name">에폭시 수지 (DGEBA 유사)</div>
-          <div class="cand-smiles">C(OCC1CO1)c1ccc(OCC2CO2)cc1</div>
-          <div class="cand-desc">고강도 · 내화학성 · 열경화성</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div>
-      <div class="sec-title">③ 직접 SMILES 입력</div>
-      <div class="smiles-row">
-        <input type="text" id="customSmiles" placeholder="예: CCO  또는  c1ccccc1">
-        <button class="btn btn-primary" onclick="addCustom()">추가</button>
-      </div>
-      <div id="customList" style="margin-top:6px;font-size:0.75rem;color:var(--muted);"></div>
-    </div>
-
-    <div>
-      <div class="sec-title">④ 분석 실행</div>
-      <div id="selInfo" style="font-size:0.78rem;color:var(--muted);margin-bottom:6px;">후보를 선택하세요</div>
-      <button class="btn btn-green btn-full" id="analyzeBtn" onclick="runAnalysis()" disabled>🔬 선택 후보 분석</button>
-      <button class="btn btn-outline btn-full" onclick="runBatchAll()" style="margin-top:6px;">📊 전체 8종 일괄 분석</button>
-    </div>
-
+  <!-- Mode toggle -->
+  <div class="mode-toggle">
+    <div class="mtab active" id="mt-disc" onclick="setMode('disc')">🔍 발견 모드</div>
+    <div class="mtab"        id="mt-des"  onclick="setMode('des')">🧬 설계 모드</div>
   </div>
 
-  <!-- ════ RIGHT ════ -->
-  <div class="right-panel">
+  <!-- ── DISCOVERY MODE ── -->
+  <div class="sec active" id="sec-disc">
 
-    <div class="viewer-wrap">
-      <div id="molSvg"></div>
-      <div class="viewer-tags">
-        <div class="vtag">분자: <b id="vName">-</b></div>
-        <div class="vtag">MW: <b id="vMW">-</b></div>
-        <div class="vtag">LogP: <b id="vLogP">-</b></div>
-      </div>
-      <div class="viewer-hint">2D 구조식</div>
-      <div id="viewerPlaceholder">
-        <div class="big">⚗️</div>
-        <div>후보 선택 후 분석하면 구조식이 표시됩니다</div>
+    <div>
+      <div class="stitle">① 목표 물성 (복수 가능)</div>
+      <div class="pgrid">
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">💪</span>고강도</div>
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">🔥</span>열안정</div>
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">💧</span>수용성</div>
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">🧬</span>생체적합</div>
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">🌱</span>친환경</div>
+        <div class="pchip" onclick="this.classList.toggle('sel')"><span class="ic">⚡</span>전기전자</div>
       </div>
     </div>
 
-    <div class="results-panel">
-      <div class="rp-header">
-        <h3 id="rTitle">분석 결과</h3>
-        <div id="rSpinner" style="display:none"><span class="spinner-sm"></span></div>
-      </div>
-
-      <div class="tab-bar">
-        <div class="tab active" onclick="switchTab('desc',this)">물성 지표</div>
-        <div class="tab" onclick="switchTab('rank',this)">후보 랭킹</div>
-        <div class="tab" onclick="switchTab('report',this)">평가 리포트</div>
-      </div>
-
-      <div class="tab-content active" id="tab-desc">
-        <div id="descContent"><p style="color:var(--muted);font-size:.8rem;">분석 결과가 여기에 표시됩니다.</p></div>
-      </div>
-      <div class="tab-content" id="tab-rank">
-        <div id="rankContent"><p style="color:var(--muted);font-size:.8rem;">일괄 분석 후 랭킹이 표시됩니다.</p></div>
-      </div>
-      <div class="tab-content" id="tab-report">
-        <div id="reportContent"><p style="color:var(--muted);font-size:.8rem;">분석 후 평가 리포트가 생성됩니다.</p></div>
+    <div>
+      <div class="stitle">② 기반 후보 선택 (복수 가능)</div>
+      <div class="clist" id="discCandList">
+        <div class="ci" data-idx="0" onclick="toggleDiscCand(this)"><div class="ico">🌾</div><div><div class="cn">천연섬유 (셀룰로오스)</div><div class="cs">OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O</div><div class="cd">고강도 · 생분해성</div></div></div>
+        <div class="ci" data-idx="1" onclick="toggleDiscCand(this)"><div class="ico">🧪</div><div><div class="cn">생분해성 고분자 (PLA)</div><div class="cs">CC(O)C(=O)O</div><div class="cd">젖산 · 친환경</div></div></div>
+        <div class="ci" data-idx="2" onclick="toggleDiscCand(this)"><div class="ico">🧲</div><div><div class="cn">이온성 액체 (Im)</div><div class="cs">c1cc[n+](CC)c(c1)C.[Br-]</div><div class="cd">이미다졸 · 이온전도</div></div></div>
+        <div class="ci" data-idx="3" onclick="toggleDiscCand(this)"><div class="ico">🔬</div><div><div class="cn">MOF 리간드 (BDC)</div><div class="cs">OC(=O)c1ccc(C(=O)O)cc1</div><div class="cd">테레프탈산 · 다공성</div></div></div>
+        <div class="ci" data-idx="4" onclick="toggleDiscCand(this)"><div class="ico">💎</div><div><div class="cn">실록산 (HMDS)</div><div class="cs">C[Si](C)(C)O[Si](C)(C)C</div><div class="cd">발수성 · 내열성</div></div></div>
+        <div class="ci" data-idx="5" onclick="toggleDiscCand(this)"><div class="ico">🔋</div><div><div class="cn">전도성 고분자 (아닐린)</div><div class="cs">Nc1ccccc1</div><div class="cd">전기전도 · 센서</div></div></div>
+        <div class="ci" data-idx="6" onclick="toggleDiscCand(this)"><div class="ico">🩺</div><div><div class="cn">약물전달 (PLGA)</div><div class="cs">CC(OC(=O)CO)C(=O)O</div><div class="cd">생체흡수성 · DDS</div></div></div>
+        <div class="ci" data-idx="7" onclick="toggleDiscCand(this)"><div class="ico">🧊</div><div><div class="cn">에폭시 수지 (DGEBA)</div><div class="cs">C(OCC1CO1)c1ccc(OCC2CO2)cc1</div><div class="cd">고강도 · 내화학</div></div></div>
       </div>
     </div>
 
+    <div>
+      <div class="stitle">③ 직접 SMILES 입력</div>
+      <div class="srow">
+        <input type="text" id="discCustom" placeholder="예: CCO">
+        <button class="btn btn-p" onclick="addDiscCustom()">추가</button>
+      </div>
+      <div id="discCustomList" style="margin-top:5px;font-size:.72rem;color:var(--muted);"></div>
+    </div>
+
+    <div>
+      <div id="discSelInfo" style="font-size:.76rem;color:var(--muted);margin-bottom:5px;">후보를 선택하세요</div>
+      <button class="btn btn-g btn-f" id="discAnalyzeBtn" onclick="runDiscovery()" disabled>🔬 선택 후보 분석</button>
+      <button class="btn btn-o btn-f" style="margin-top:5px;font-size:.76rem;" onclick="runBatchAll()">📊 전체 8종 일괄 분석</button>
+    </div>
+
+  </div><!-- /sec-disc -->
+
+  <!-- ── DESIGN MODE ── -->
+  <div class="sec" id="sec-des">
+
+    <div>
+      <div class="stitle">① 기반 분자 선택 (1개)</div>
+      <div class="base-sel" id="baseSelList">
+        <div class="bsi" data-idx="0" onclick="selectBase(this)"><span>🌾</span> 셀룰로오스</div>
+        <div class="bsi" data-idx="1" onclick="selectBase(this)"><span>🧪</span> PLA (젖산)</div>
+        <div class="bsi" data-idx="2" onclick="selectBase(this)"><span>🧲</span> 이온성 액체</div>
+        <div class="bsi" data-idx="3" onclick="selectBase(this)"><span>🔬</span> MOF 리간드</div>
+        <div class="bsi" data-idx="4" onclick="selectBase(this)"><span>💎</span> 실록산</div>
+        <div class="bsi" data-idx="5" onclick="selectBase(this)"><span>🔋</span> 아닐린</div>
+        <div class="bsi" data-idx="6" onclick="selectBase(this)"><span>🩺</span> PLGA</div>
+        <div class="bsi" data-idx="7" onclick="selectBase(this)"><span>🧊</span> 에폭시</div>
+      </div>
+      <div class="srow" style="margin-top:6px;">
+        <input type="text" id="baseCustom" placeholder="또는 직접 SMILES 입력">
+        <button class="btn btn-p" onclick="setBaseCustom()">사용</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="stitle">② 설계 전략</div>
+      <div class="strategy-grid">
+        <div class="sg sel" data-strat="sub" onclick="selStrat(this)"><span class="si">⚗️</span>치환</div>
+        <div class="sg" data-strat="combo" onclick="selStrat(this)"><span class="si">🔗</span>결합</div>
+        <div class="sg" data-strat="evo" onclick="selStrat(this)"><span class="si">🧬</span>진화</div>
+        <div class="sg" data-strat="random" onclick="selStrat(this)"><span class="si">🎲</span>랜덤탐색</div>
+      </div>
+    </div>
+
+    <!-- Strategy details -->
+    <div id="strat-sub">
+      <div class="stitle">③ 추가할 작용기 (복수 가능)</div>
+      <div class="bb-grid" id="subGrid">
+        <div class="bb sel" data-smiles="O" onclick="toggleBB(this)">-OH<span class="effect">수용성↑</span></div>
+        <div class="bb" data-smiles="N" onclick="toggleBB(this)">-NH₂<span class="effect">염기성↑</span></div>
+        <div class="bb" data-smiles="F" onclick="toggleBB(this)">-F<span class="effect">대사안정↑</span></div>
+        <div class="bb" data-smiles="Cl" onclick="toggleBB(this)">-Cl<span class="effect">지용성↑</span></div>
+        <div class="bb" data-smiles="C" onclick="toggleBB(this)">-CH₃<span class="effect">MW↑ LogP↑</span></div>
+        <div class="bb" data-smiles="CC" onclick="toggleBB(this)">-C₂H₅<span class="effect">소수성↑</span></div>
+        <div class="bb" data-smiles="C(=O)O" onclick="toggleBB(this)">-COOH<span class="effect">산성↑</span></div>
+        <div class="bb" data-smiles="C(=O)N" onclick="toggleBB(this)">-CONH₂<span class="effect">수소결합↑</span></div>
+        <div class="bb" data-smiles="OC" onclick="toggleBB(this)">-OCH₃<span class="effect">지용성↑</span></div>
+        <div class="bb" data-smiles="C#N" onclick="toggleBB(this)">-CN<span class="effect">극성↑</span></div>
+        <div class="bb" data-smiles="C(F)(F)F" onclick="toggleBB(this)">-CF₃<span class="effect">대사안정↑↑</span></div>
+        <div class="bb" data-smiles="S(=O)(=O)O" onclick="toggleBB(this)">-SO₃H<span class="effect">수용성↑↑</span></div>
+        <div class="bb" data-smiles="[N+](=O)[O-]" onclick="toggleBB(this)">-NO₂<span class="effect">전자흡인</span></div>
+        <div class="bb" data-smiles="c1ccccc1" onclick="toggleBB(this)">페닐<span class="effect">방향족↑</span></div>
+        <div class="bb" data-smiles="C1CCCCC1" onclick="toggleBB(this)">사이클로헥실<span class="effect">강도↑</span></div>
+        <div class="bb" data-smiles="c1ccncc1" onclick="toggleBB(this)">피리딜<span class="effect">극성↑</span></div>
+      </div>
+    </div>
+
+    <div id="strat-combo" style="display:none;">
+      <div class="stitle">③ 결합할 두 번째 분자</div>
+      <div class="base-sel" id="comboSelList">
+        <div class="bsi" data-idx="0" onclick="selectCombo(this)"><span>🌾</span> 셀룰로오스</div>
+        <div class="bsi" data-idx="1" onclick="selectCombo(this)"><span>🧪</span> PLA</div>
+        <div class="bsi" data-idx="2" onclick="selectCombo(this)"><span>🧲</span> 이온성 액체</div>
+        <div class="bsi" data-idx="3" onclick="selectCombo(this)"><span>🔬</span> MOF 리간드</div>
+        <div class="bsi" data-idx="4" onclick="selectCombo(this)"><span>💎</span> 실록산</div>
+        <div class="bsi" data-idx="5" onclick="selectCombo(this)"><span>🔋</span> 아닐린</div>
+        <div class="bsi" data-idx="6" onclick="selectCombo(this)"><span>🩺</span> PLGA</div>
+        <div class="bsi" data-idx="7" onclick="selectCombo(this)"><span>🧊</span> 에폭시</div>
+      </div>
+      <div class="srow" style="margin-top:6px;">
+        <input type="text" id="comboCustom" placeholder="또는 직접 SMILES">
+        <button class="btn btn-p" onclick="setComboCustom()">사용</button>
+      </div>
+    </div>
+
+    <div id="strat-evo" style="display:none;">
+      <div class="stitle">③ 진화 목표 물성</div>
+      <div class="pgrid">
+        <div class="pchip sel" data-goal="score" onclick="this.classList.toggle('sel')"><span class="ic">🏆</span>점수최대</div>
+        <div class="pchip" data-goal="qed" onclick="this.classList.toggle('sel')"><span class="ic">💊</span>약물유사</div>
+        <div class="pchip" data-goal="solubility" onclick="this.classList.toggle('sel')"><span class="ic">💧</span>수용성</div>
+        <div class="pchip" data-goal="eco" onclick="this.classList.toggle('sel')"><span class="ic">🌱</span>친환경</div>
+        <div class="pchip" data-goal="mw" onclick="this.classList.toggle('sel')"><span class="ic">⚖️</span>경량화</div>
+        <div class="pchip" data-goal="lipinski" onclick="this.classList.toggle('sel')"><span class="ic">✅</span>Lipinski</div>
+      </div>
+    </div>
+
+    <div id="strat-random" style="display:none;">
+      <div class="stitle">③ 랜덤 탐색 설정</div>
+      <div style="display:flex;align-items:center;gap:10px;font-size:.8rem;">
+        <span style="color:var(--muted)">생성 수:</span>
+        <select id="randCount" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:5px 8px;border-radius:6px;font-size:.8rem;">
+          <option value="10">10개</option>
+          <option value="20" selected>20개</option>
+          <option value="50">50개</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div id="desSelInfo" style="font-size:.76rem;color:var(--muted);margin-bottom:5px;">기반 분자를 선택하세요</div>
+      <button class="btn btn-m btn-f" id="desGenerateBtn" onclick="runDesign()" disabled>✨ 새 분자 생성</button>
+    </div>
+
+  </div><!-- /sec-des -->
+
+</div><!-- /lp -->
+
+<!-- ══════════════ RIGHT ══════════════ -->
+<div class="rp">
+
+  <div class="vw">
+    <div id="molSvg"></div>
+    <div class="vtags">
+      <div class="vtag">분자: <b id="vName">-</b></div>
+      <div class="vtag">MW: <b id="vMW">-</b></div>
+      <div class="vtag">LogP: <b id="vLogP">-</b></div>
+    </div>
+    <div class="vhint">2D 구조식</div>
+    <div id="vph"><div class="big">⚗️</div><div>후보 선택 후 분석·생성하면 구조식 표시</div></div>
   </div>
-</div>
+
+  <div class="res">
+    <div class="rh">
+      <h3 id="rTitle">분석 결과</h3>
+      <div id="rSpin" style="display:none;"><span class="spin"></span></div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('desc',this)">물성 지표</div>
+      <div class="tab" onclick="switchTab('rank',this)">후보 랭킹</div>
+      <div class="tab" onclick="switchTab('gen',this)">🧬 생성 후보</div>
+      <div class="tab" onclick="switchTab('report',this)">리포트</div>
+    </div>
+
+    <div class="tc active" id="tab-desc">
+      <p id="descContent" style="color:var(--muted);font-size:.78rem;">분석 결과가 여기에 표시됩니다.</p>
+    </div>
+    <div class="tc" id="tab-rank">
+      <p id="rankContent" style="color:var(--muted);font-size:.78rem;">일괄 분석 후 랭킹이 표시됩니다.</p>
+    </div>
+    <div class="tc" id="tab-gen">
+      <div id="genContent" style="color:var(--muted);font-size:.78rem;">설계 모드에서 생성하면 여기에 표시됩니다.</div>
+    </div>
+    <div class="tc" id="tab-report">
+      <div id="reportContent" style="color:var(--muted);font-size:.78rem;">분석 후 리포트가 생성됩니다.</div>
+    </div>
+  </div>
+
+</div><!-- /rp -->
+</div><!-- /main -->
 
 <script>
-// ═══════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════
-let RDKitModule = null;
-let selectedCands = new Set();
-let customCands   = [];
-let batchResults  = [];
-
-const CANDIDATES = [
-  { name:'천연섬유 (셀룰로오스)',   smiles:'OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O' },
-  { name:'생분해성 고분자 (PLA)',    smiles:'CC(O)C(=O)O' },
-  { name:'이온성 액체 (ImBr)',       smiles:'c1cc[n+](CC)c(c1)C.[Br-]' },
-  { name:'MOF 리간드 (BDC)',         smiles:'OC(=O)c1ccc(C(=O)O)cc1' },
-  { name:'실록산 소재 (HMDS)',       smiles:'C[Si](C)(C)O[Si](C)(C)C' },
-  { name:'전도성 고분자 (아닐린)',   smiles:'Nc1ccccc1' },
-  { name:'약물전달 캐리어 (PLGA)',   smiles:'CC(OC(=O)CO)C(=O)O' },
-  { name:'에폭시 수지 (DGEBA)',      smiles:'C(OCC1CO1)c1ccc(OCC2CO2)cc1' },
-];
-
-// ═══════════════════════════════════════
+// ═══════════════════════════════════
 //  RDKIT INIT
-// ═══════════════════════════════════════
-window.initRDKitModule().then(mod => {
-  RDKitModule = mod;
-  document.getElementById('rdkitDot').className = 'ok';
-  document.getElementById('rdkitStatus').textContent = 'RDKit WebAssembly 준비 완료 — 서버 불필요';
-  document.getElementById('rdkitStatus').style.color = 'var(--green)';
-  document.getElementById('rdkitLabel').textContent = 'RDKit.js ✓';
-  document.getElementById('rdkitLabel').style.background = '#064e3b';
-}).catch(e => {
-  document.getElementById('rdkitDot').className = 'err';
-  document.getElementById('rdkitStatus').textContent = 'RDKit 로드 실패 — 추정값으로 대체';
-  document.getElementById('rdkitStatus').style.color = 'var(--yellow)';
+// ═══════════════════════════════════
+let RDK = null;
+window.initRDKitModule().then(m => {
+  RDK = m;
+  document.getElementById('rdot').className = 'ok';
+  document.getElementById('rstat').textContent = 'RDKit.js 준비 완료 — 브라우저에서 직접 계산';
+  document.getElementById('rstat').style.color = 'var(--green)';
+  document.getElementById('rlabel').className = 'rbadge-ok';
+  document.getElementById('rlabel').textContent = 'RDKit.js ✓';
+}).catch(() => {
+  document.getElementById('rdot').className = 'err';
+  document.getElementById('rstat').textContent = 'RDKit 로드 실패 — 추정값 사용';
+  document.getElementById('rstat').style.color = 'var(--yellow)';
 });
 
-// ═══════════════════════════════════════
-//  COMPUTE DESCRIPTORS  (RDKit.js)
-// ═══════════════════════════════════════
-function computeDescriptors(smiles) {
-  if (!RDKitModule) return fallbackDescriptors(smiles);
+// ═══════════════════════════════════
+//  CANDIDATE DATA
+// ═══════════════════════════════════
+const CANDS = [
+  { name:'셀룰로오스', smiles:'OC[C@H]1OC(O)[C@H](O)[C@@H](O)[C@@H]1O', icon:'🌾' },
+  { name:'PLA (젖산)', smiles:'CC(O)C(=O)O', icon:'🧪' },
+  { name:'이온성 액체', smiles:'CCn1cccc1C', icon:'🧲' },
+  { name:'MOF-BDC', smiles:'OC(=O)c1ccc(C(=O)O)cc1', icon:'🔬' },
+  { name:'실록산 HMDS', smiles:'C[Si](C)(C)O[Si](C)(C)C', icon:'💎' },
+  { name:'아닐린', smiles:'Nc1ccccc1', icon:'🔋' },
+  { name:'PLGA 단위', smiles:'CC(OC(=O)CO)C(=O)O', icon:'🩺' },
+  { name:'에폭시 DGEBA', smiles:'C(OCC1CO1)c1ccc(OCC2CO2)cc1', icon:'🧊' },
+];
 
+// ═══════════════════════════════════
+//  DESCRIPTORS
+// ═══════════════════════════════════
+function computeDesc(smiles) {
+  if (!RDK) return fallback(smiles);
   let mol;
-  try { mol = RDKitModule.get_mol(smiles); }
-  catch(e) { return null; }
-  if (!mol || !mol.is_valid()) { if(mol) mol.delete(); return null; }
+  try { mol = RDK.get_mol(smiles); } catch { return null; }
+  if (!mol || !mol.is_valid()) { mol?.delete(); return null; }
 
   let raw;
-  try { raw = JSON.parse(mol.get_descriptors()); }
-  catch(e) { mol.delete(); return fallbackDescriptors(smiles); }
+  try { raw = JSON.parse(mol.get_descriptors()); } catch { mol.delete(); return fallback(smiles); }
 
-  const mw     = +(raw.CrippenMolMR !== undefined ? raw.amw  || raw.MolWt || 0 : raw.amw || 0).toFixed(3)
-              || +( raw.amw ?? raw.MolWt ?? raw['Molecular Weight'] ?? 0).toFixed(3);
-  const logp   = +(raw.CrippenClogP ?? raw.MolLogP ?? 0).toFixed(3);
-  const tpsa   = +(raw.tpsa ?? raw.TPSA ?? 0).toFixed(2);
-  const hbd    = raw.NumHBD  ?? raw.NumHDonors  ?? 0;
-  const hba    = raw.NumHBA  ?? raw.NumHAcceptors ?? 0;
-  const rot    = raw.NumRotatableBonds ?? 0;
-  const rings  = raw.RingCount ?? 0;
-  const aromr  = raw.NumAromaticRings ?? 0;
-  const heavy  = raw.NumHeavyAtoms ?? 0;
-  const fsp3   = +(raw.FractionCSP3 ?? 0).toFixed(4);
-  const qed    = +(raw.qed ?? 0).toFixed(4);
+  const mw   = +(raw.amw ?? raw.MolWt ?? 0).toFixed(2);
+  const logp  = +(raw.CrippenClogP ?? raw.MolLogP ?? 0).toFixed(3);
+  const tpsa  = +(raw.tpsa ?? raw.TPSA ?? 0).toFixed(2);
+  const hbd   = raw.NumHBD ?? raw.NumHDonors ?? 0;
+  const hba   = raw.NumHBA ?? raw.NumHAcceptors ?? 0;
+  const rot   = raw.NumRotatableBonds ?? 0;
+  const rings = raw.RingCount ?? 0;
+  const aromr = raw.NumAromaticRings ?? 0;
+  const heavy = raw.NumHeavyAtoms ?? 0;
+  const fsp3  = +(raw.FractionCSP3 ?? 0).toFixed(4);
+  const qed   = +(raw.qed ?? 0).toFixed(4);
+  const lip   = mw<=500 && logp<=5 && hbd<=5 && hba<=10;
+  const sa    = +(Math.max(1,Math.min(10,1+heavy/20+rings*.5+aromr*.3))).toFixed(2);
+  const env   = +(Math.max(0,Math.min(10,10-Math.abs(logp)-tpsa/50))).toFixed(2);
+  const score = +(qed*40+Math.min(fsp3,1)*20+(1-sa/10)*20+env/10*20).toFixed(1);
 
   mol.delete();
-
-  const lipinski = (mw <= 500 && logp <= 5 && hbd <= 5 && hba <= 10);
-  const sa       = +(Math.max(1, Math.min(10, 1 + heavy/20 + rings*0.5 + aromr*0.3))).toFixed(2);
-  const env      = +(Math.max(0, Math.min(10, 10 - Math.abs(logp) - tpsa/50))).toFixed(2);
-  const score    = +(qed*40 + Math.min(fsp3,1)*20 + (1-sa/10)*20 + env/10*20).toFixed(1);
-
-  return { mw, logp, tpsa, hbd, hba, rot, rings, aromr, heavy, fsp3, qed, lipinski, sa, env, score };
+  return { mw, logp, tpsa, hbd, hba, rot, rings, aromr, heavy, fsp3, qed, lip, sa, env, score };
 }
 
-function fallbackDescriptors(smiles) {
-  const c = smiles.replace(/[^A-Za-z]/g,'').length;
+function fallback(smiles) {
+  const c = (smiles.match(/[A-Z]/g)||[]).length;
   const o = (smiles.match(/O/g)||[]).length;
   const n = (smiles.match(/N/g)||[]).length;
-  const mw   = +(c*12 + o*16 + n*14 + 4).toFixed(1);
-  const logp = +(c*0.4 - o*0.3).toFixed(2);
-  const tpsa = +(o*20 + n*26).toFixed(1);
-  const hbd  = o+n, hba = o+n;
-  const score = 45.0;
-  return { mw, logp, tpsa, hbd, hba, rot:2, rings:0, aromr:0, heavy:c, fsp3:0.5,
-           qed:0.4, lipinski:true, sa:4, env:6, score, _fallback:true };
+  return { mw:+(c*12+o*16+n*14+4).toFixed(1), logp:+(c*.4-o*.3).toFixed(2),
+    tpsa:+(o*20+n*26).toFixed(1), hbd:o+n, hba:o+n, rot:2, rings:0, aromr:0,
+    heavy:c, fsp3:.5, qed:.4, lip:true, sa:4, env:6, score:45.0, _est:true };
 }
 
-// ═══════════════════════════════════════
-//  RENDER 2D STRUCTURE
-// ═══════════════════════════════════════
-function renderMol(smiles, name, desc) {
-  document.getElementById('viewerPlaceholder').style.display = 'none';
-  const container = document.getElementById('molSvg');
-
-  if (!RDKitModule) {
-    container.innerHTML = `<div style="color:var(--muted);font-size:.8rem;padding:20px;">RDKit 미로드 — 구조 표시 불가</div>`;
-    return;
-  }
-
+function canonSmiles(smiles) {
+  if (!RDK) return smiles;
   try {
-    const mol = RDKitModule.get_mol(smiles);
-    if (!mol || !mol.is_valid()) { mol && mol.delete(); return; }
-    const svg = mol.get_svg_with_highlights(JSON.stringify({
-      width: 480, height: 260,
-      backgroundColour: [0.02, 0.04, 0.07, 1],
-      kekulize: true,
-    }));
+    const mol = RDK.get_mol(smiles);
+    if (!mol || !mol.is_valid()) { mol?.delete(); return null; }
+    const s = mol.get_smiles();
     mol.delete();
-    container.innerHTML = svg;
-    // style the SVG for dark theme
-    const svgEl = container.querySelector('svg');
-    if (svgEl) {
-      svgEl.style.width  = '100%';
-      svgEl.style.height = '100%';
-      svgEl.querySelectorAll('text').forEach(t => t.setAttribute('fill','#e5e7eb'));
-      svgEl.querySelectorAll('path[stroke="#000000"],line[stroke="#000000"]')
-           .forEach(e => e.setAttribute('stroke','#94a3b8'));
-    }
-  } catch(e) {
-    container.innerHTML = `<div style="color:var(--muted);font-size:.8rem;padding:20px;">구조 렌더링 오류</div>`;
-  }
+    return s;
+  } catch { return null; }
+}
 
-  document.getElementById('vName').textContent  = (name||'').substring(0,18);
+function isValid(smiles) {
+  if (!RDK) return true;
+  try {
+    const mol = RDK.get_mol(smiles);
+    const ok = mol && mol.is_valid();
+    mol?.delete();
+    return ok;
+  } catch { return false; }
+}
+
+// ═══════════════════════════════════
+//  2D RENDER
+// ═══════════════════════════════════
+function renderMol(smiles, name, desc) {
+  document.getElementById('vph').style.display = 'none';
+  const c = document.getElementById('molSvg');
+  if (!RDK) { c.innerHTML = `<div style="color:var(--muted);padding:20px;font-size:.78rem;">RDKit 미로드</div>`; return; }
+  try {
+    const mol = RDK.get_mol(smiles);
+    if (!mol || !mol.is_valid()) { mol?.delete(); return; }
+    const svg = mol.get_svg_with_highlights(JSON.stringify({ width:460, height:240, backgroundColour:[0.02,0.04,0.07,1], kekulize:true }));
+    mol.delete();
+    c.innerHTML = svg;
+    const el = c.querySelector('svg');
+    if (el) { el.style.width='100%'; el.style.height='100%'; el.querySelectorAll('text').forEach(t => t.setAttribute('fill','#cbd5e1')); }
+  } catch { c.innerHTML = `<div style="color:var(--muted);padding:20px;font-size:.78rem;">구조 렌더 오류</div>`; }
+  document.getElementById('vName').textContent  = (name||'').substring(0,20);
   document.getElementById('vMW').textContent    = desc?.mw ?? '-';
   document.getElementById('vLogP').textContent  = desc?.logp ?? '-';
 }
 
-// ═══════════════════════════════════════
-//  UI INTERACTIONS
-// ═══════════════════════════════════════
-function toggleProp(el) {
-  el.classList.toggle('selected');
+function miniSvg(smiles) {
+  if (!RDK) return '';
+  try {
+    const mol = RDK.get_mol(smiles);
+    if (!mol || !mol.is_valid()) { mol?.delete(); return ''; }
+    const svg = mol.get_svg_with_highlights(JSON.stringify({ width:120, height:86, backgroundColour:[0.02,0.04,0.07,1], kekulize:true }));
+    mol.delete();
+    return svg;
+  } catch { return ''; }
 }
 
-function toggleCand(el) {
-  const idx = +el.dataset.idx;
-  if (selectedCands.has(idx)) { selectedCands.delete(idx); el.classList.remove('selected'); }
-  else                         { selectedCands.add(idx);    el.classList.add('selected'); }
-  updateSelInfo();
+// ═══════════════════════════════════
+//  UI STATE
+// ═══════════════════════════════════
+let discSel = new Set();
+let discCustomArr = [];
+let baseMol   = null; // { name, smiles }
+let comboMol  = null;
+let curStrat  = 'sub';
+let batchRes  = [];
+let genRes    = [];
+
+function setMode(m) {
+  document.getElementById('sec-disc').classList.toggle('active', m==='disc');
+  document.getElementById('sec-des').classList.toggle('active', m==='des');
+  document.getElementById('mt-disc').classList.toggle('active', m==='disc');
+  document.getElementById('mt-des').classList.toggle('active',  m==='des');
 }
 
-function addCustom() {
-  const inp = document.getElementById('customSmiles');
-  const s = inp.value.trim();
-  if (!s) return;
-  customCands.push({ name: s.length > 14 ? s.substring(0,14)+'…' : s, smiles: s });
-  inp.value = '';
-  const el = document.getElementById('customList');
-  el.innerHTML = customCands.map((c,i) =>
-    `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--border);border-radius:5px;padding:2px 6px;margin:2px;">
-      <span style="font-family:monospace">${c.smiles.substring(0,16)}</span>
-      <span onclick="removeCustom(${i})" style="cursor:pointer;color:var(--red)">✕</span>
+// ── Discovery mode ──
+function toggleDiscCand(el) {
+  const i = +el.dataset.idx;
+  if (discSel.has(i)) { discSel.delete(i); el.classList.remove('sel'); }
+  else { discSel.add(i); el.classList.add('sel'); }
+  updateDiscInfo();
+}
+function addDiscCustom() {
+  const v = document.getElementById('discCustom').value.trim();
+  if (!v) return;
+  discCustomArr.push({ name: v.substring(0,16), smiles: v });
+  document.getElementById('discCustom').value = '';
+  renderDiscCustomList();
+  updateDiscInfo();
+}
+function removeDiscCustom(i) {
+  discCustomArr.splice(i,1);
+  renderDiscCustomList();
+  updateDiscInfo();
+}
+function renderDiscCustomList() {
+  document.getElementById('discCustomList').innerHTML = discCustomArr.map((c,i) =>
+    `<span style="display:inline-flex;align-items:center;gap:3px;background:var(--border);border-radius:4px;padding:2px 5px;margin:2px;font-family:monospace;font-size:.68rem;">
+      ${c.smiles.substring(0,14)} <span onclick="removeDiscCustom(${i})" style="cursor:pointer;color:var(--red)">✕</span>
     </span>`
   ).join('');
-  updateSelInfo();
+}
+function updateDiscInfo() {
+  const t = discSel.size + discCustomArr.length;
+  document.getElementById('discSelInfo').textContent = t ? `선택: ${t}종` : '후보를 선택하세요';
+  document.getElementById('discAnalyzeBtn').disabled = !t;
+}
+function getDiscList() {
+  const l = [];
+  discSel.forEach(i => l.push({...CANDS[i]}));
+  discCustomArr.forEach(c => l.push(c));
+  return l;
 }
 
-function removeCustom(i) {
-  customCands.splice(i,1);
-  addCustom._refresh && addCustom._refresh();
-  document.getElementById('customList').innerHTML = customCands.map((c,j) =>
-    `<span style="display:inline-flex;align-items:center;gap:4px;background:var(--border);border-radius:5px;padding:2px 6px;margin:2px;">
-      <span style="font-family:monospace">${c.smiles.substring(0,16)}</span>
-      <span onclick="removeCustom(${j})" style="cursor:pointer;color:var(--red)">✕</span>
-    </span>`
-  ).join('');
-  updateSelInfo();
+// ── Design mode ──
+function selectBase(el) {
+  document.querySelectorAll('#baseSelList .bsi').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  baseMol = { ...CANDS[+el.dataset.idx] };
+  updateDesInfo();
+}
+function setBaseCustom() {
+  const v = document.getElementById('baseCustom').value.trim();
+  if (!v) return;
+  document.querySelectorAll('#baseSelList .bsi').forEach(e => e.classList.remove('sel'));
+  baseMol = { name: v.substring(0,16), smiles: v };
+  updateDesInfo();
+}
+function selectCombo(el) {
+  document.querySelectorAll('#comboSelList .bsi').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  comboMol = { ...CANDS[+el.dataset.idx] };
+}
+function setComboCustom() {
+  const v = document.getElementById('comboCustom').value.trim();
+  if (!v) return;
+  document.querySelectorAll('#comboSelList .bsi').forEach(e => e.classList.remove('sel'));
+  comboMol = { name: v.substring(0,16), smiles: v };
+}
+function selStrat(el) {
+  document.querySelectorAll('.sg').forEach(e => e.classList.remove('sel'));
+  el.classList.add('sel');
+  curStrat = el.dataset.strat;
+  ['sub','combo','evo','random'].forEach(s => {
+    document.getElementById('strat-'+s).style.display = s===curStrat ? '' : 'none';
+  });
+}
+function toggleBB(el) { el.classList.toggle('sel'); }
+function updateDesInfo() {
+  document.getElementById('desSelInfo').textContent = baseMol
+    ? `기반: ${baseMol.name}` : '기반 분자를 선택하세요';
+  document.getElementById('desGenerateBtn').disabled = !baseMol;
 }
 
-function updateSelInfo() {
-  const total = selectedCands.size + customCands.length;
-  const btn   = document.getElementById('analyzeBtn');
-  const info  = document.getElementById('selInfo');
-  if (!total) { info.textContent = '후보를 선택하세요'; btn.disabled = true; return; }
-  const names = [];
-  selectedCands.forEach(i => names.push(CANDIDATES[i].name.split(' ')[0]));
-  customCands.forEach(c => names.push('커스텀'));
-  info.textContent = `선택: ${names.join(', ')} (${total}종)`;
-  btn.disabled = false;
+// ═══════════════════════════════════
+//  MOLECULAR GENERATION ENGINE
+// ═══════════════════════════════════
+const SUBSTITUENTS = [
+  { name:'-OH',    smi:'O' },   { name:'-NH₂',  smi:'N' },
+  { name:'-F',     smi:'F' },   { name:'-Cl',    smi:'Cl' },
+  { name:'-CH₃',  smi:'C' },   { name:'-C₂H₅', smi:'CC' },
+  { name:'-COOH', smi:'C(=O)O' }, { name:'-CONH₂',smi:'C(=O)N' },
+  { name:'-OCH₃', smi:'OC' },  { name:'-CN',    smi:'C#N' },
+  { name:'-CF₃',  smi:'C(F)(F)F' }, { name:'-SO₃H',smi:'S(=O)(=O)O' },
+  { name:'-NO₂',  smi:'[N+](=O)[O-]' }, { name:'Ph',smi:'c1ccccc1' },
+  { name:'Py',    smi:'c1ccncc1' }, { name:'cHex', smi:'C1CCCCC1' },
+];
+
+const LINKERS = [
+  { name:'C-링커',     smi: (a,b)=>`${a}C${b}` },
+  { name:'O-링커',     smi: (a,b)=>`${a}O${b}` },
+  { name:'N-링커',     smi: (a,b)=>`${a}N${b}` },
+  { name:'에스터',      smi: (a,b)=>`${a}C(=O)O${b}` },
+  { name:'아마이드',    smi: (a,b)=>`${a}C(=O)N${b}` },
+  { name:'CC-링커',    smi: (a,b)=>`${a}CC${b}` },
+  { name:'직접 결합',   smi: (a,b)=>`${a}${b}` },
+];
+
+function tryMol(smiles) {
+  const canon = canonSmiles(smiles);
+  if (!canon) return null;
+  const d = computeDesc(canon);
+  return d ? { smiles: canon, desc: d } : null;
 }
 
-function getSelectedList() {
-  const list = [];
-  selectedCands.forEach(i => list.push({ ...CANDIDATES[i] }));
-  customCands.forEach(c => list.push(c));
-  return list;
+// Substitution: add selected (or all) substituents to base
+function generateSub(base, selectedSubs) {
+  const results = [];
+  const seen = new Set([base]);
+  const subs = selectedSubs.length ? selectedSubs : SUBSTITUENTS;
+
+  for (const sub of subs) {
+    const variants = [
+      base + sub.smi,
+      sub.smi + base,
+      base + 'C' + sub.smi,
+      base + 'CC' + sub.smi,
+      base + 'O' + sub.smi,
+    ];
+    for (const v of variants) {
+      const r = tryMol(v);
+      if (r && !seen.has(r.smiles)) {
+        seen.add(r.smiles);
+        results.push({ ...r, label: `${sub.name} 치환`, isNew: true });
+      }
+    }
+  }
+  return results.sort((a,b) => b.desc.score - a.desc.score).slice(0, 24);
 }
 
-// ═══════════════════════════════════════
-//  ANALYSIS
-// ═══════════════════════════════════════
-function runAnalysis() {
-  const list = getSelectedList();
+// Combination: link two molecules with various linkers
+function generateCombo(smiA, smiB) {
+  const results = [];
+  const seen = new Set();
+  for (const lnk of LINKERS) {
+    const r = tryMol(lnk.smi(smiA, smiB));
+    if (r && !seen.has(r.smiles)) {
+      seen.add(r.smiles);
+      results.push({ ...r, label: lnk.name, isNew: true });
+    }
+    // reverse
+    const r2 = tryMol(lnk.smi(smiB, smiA));
+    if (r2 && !seen.has(r2.smiles)) {
+      seen.add(r2.smiles);
+      results.push({ ...r2, label: lnk.name + ' (역)', isNew: true });
+    }
+  }
+  return results.sort((a,b) => b.desc.score - a.desc.score);
+}
+
+// Evolution: iterate mutation for N generations
+function generateEvo(base, goals, generations=4) {
+  const scoreFor = (d) => {
+    let s = d.score;
+    if (goals.has('qed'))      s += d.qed * 20;
+    if (goals.has('solubility'))s += (10 - Math.abs(d.logp)) * 2 + (d.hbd + d.hba);
+    if (goals.has('eco'))       s += d.env * 3;
+    if (goals.has('mw'))        s -= d.mw / 20;
+    if (goals.has('lipinski'))  s += d.lip ? 15 : -15;
+    return s;
+  };
+
+  let pool = [{ smiles: base, desc: computeDesc(base), gen: 0 }].filter(x => x.desc);
+  const allResults = [...pool];
+  const seen = new Set(pool.map(x => x.smiles));
+
+  for (let g = 1; g <= generations; g++) {
+    const nextPool = [];
+    for (const parent of pool.slice(0, 3)) {
+      for (const sub of SUBSTITUENTS.slice(0, 8)) {
+        for (const v of [parent.smiles + sub.smi, sub.smi + parent.smiles, parent.smiles + 'C' + sub.smi]) {
+          const r = tryMol(v);
+          if (r && !seen.has(r.smiles)) {
+            seen.add(r.smiles);
+            const entry = { ...r, gen: g, label: `세대 ${g}: +${sub.name}`, isNew: true };
+            nextPool.push(entry);
+            allResults.push(entry);
+          }
+        }
+      }
+    }
+    pool = nextPool.sort((a,b) => scoreFor(b.desc) - scoreFor(a.desc)).slice(0, 5);
+    if (!pool.length) break;
+  }
+
+  return allResults.sort((a,b) => b.desc.score - a.desc.score).slice(0, 30);
+}
+
+// Random exploration: random combinations of fragments
+function generateRandom(base, count=20) {
+  const results = [];
+  const seen = new Set([canonSmiles(base)].filter(Boolean));
+  const all = SUBSTITUENTS;
+
+  let tries = 0;
+  while (results.length < count && tries < count * 10) {
+    tries++;
+    const s1 = all[Math.floor(Math.random() * all.length)];
+    const s2 = all[Math.floor(Math.random() * all.length)];
+    const variants = [
+      base + s1.smi,
+      s1.smi + base + s2.smi,
+      base + 'C' + s1.smi + 'C' + s2.smi,
+      base + s1.smi + s2.smi,
+    ];
+    for (const v of variants) {
+      const r = tryMol(v);
+      if (r && !seen.has(r.smiles)) {
+        seen.add(r.smiles);
+        results.push({ ...r, label: `${s1.name}+${s2.name}`, isNew: true });
+        break;
+      }
+    }
+  }
+  return results.sort((a,b) => b.desc.score - a.desc.score);
+}
+
+// ═══════════════════════════════════
+//  RUN ACTIONS
+// ═══════════════════════════════════
+function runDiscovery() {
+  const list = getDiscList();
   if (!list.length) return;
-  if (list.length === 1) doSingle(list[0]);
-  else doBatch(list);
-}
-
-function runBatchAll() {
-  doBatch(CANDIDATES.map(c => ({...c})));
-}
-
-function doSingle(cand) {
   setLoading(true);
   setTimeout(() => {
-    const desc = computeDescriptors(cand.smiles);
-    if (!desc) { alert('유효하지 않은 SMILES입니다.'); setLoading(false); return; }
-    renderDescriptors(desc, cand.name);
-    renderReport([{ ...cand, desc, ok: true }]);
-    renderMol(cand.smiles, cand.name, desc);
-    switchTab('desc', document.querySelectorAll('.tab')[0]);
+    if (list.length === 1) {
+      const d = computeDesc(list[0].smiles);
+      if (!d) { alert('유효하지 않은 SMILES'); setLoading(false); return; }
+      renderDescriptors(d, list[0].name);
+      renderReport([{ ...list[0], desc:d, ok:true }]);
+      renderMol(list[0].smiles, list[0].name, d);
+      switchTab('desc', document.querySelectorAll('.tab')[0]);
+    } else {
+      const res = list.map(c => { const d = computeDesc(c.smiles); return { ...c, desc:d, ok:!!d }; })
+                      .sort((a,b)=>(b.desc?.score||0)-(a.desc?.score||0));
+      batchRes = res;
+      renderRanking(res);
+      renderReport(res);
+      if (res[0]?.ok) { renderDescriptors(res[0].desc, res[0].name); renderMol(res[0].smiles, res[0].name, res[0].desc); }
+      switchTab('rank', document.querySelectorAll('.tab')[1]);
+    }
     setLoading(false);
   }, 30);
 }
 
-function doBatch(list) {
+function runBatchAll() {
   setLoading(true);
   setTimeout(() => {
-    const results = list.map(c => {
-      const desc = computeDescriptors(c.smiles);
-      return { name: c.name, smiles: c.smiles, desc, ok: !!desc };
-    }).sort((a,b) => (b.desc?.score||0) - (a.desc?.score||0));
-
-    batchResults = results;
-    renderRanking(results);
-    renderReport(results);
-    if (results[0]?.ok) {
-      renderDescriptors(results[0].desc, results[0].name);
-      renderMol(results[0].smiles, results[0].name, results[0].desc);
-    }
+    const res = CANDS.map(c => { const d = computeDesc(c.smiles); return { ...c, desc:d, ok:!!d }; })
+                     .sort((a,b)=>(b.desc?.score||0)-(a.desc?.score||0));
+    batchRes = res;
+    renderRanking(res);
+    renderReport(res);
+    if (res[0]?.ok) { renderDescriptors(res[0].desc, res[0].name); renderMol(res[0].smiles, res[0].name, res[0].desc); }
     switchTab('rank', document.querySelectorAll('.tab')[1]);
     setLoading(false);
   }, 30);
 }
 
-// ═══════════════════════════════════════
-//  RENDER DESCRIPTORS
-// ═══════════════════════════════════════
+function runDesign() {
+  if (!baseMol) return;
+  setLoading(true);
+  document.getElementById('rTitle').textContent = '분자 생성 중…';
+
+  setTimeout(() => {
+    let results = [];
+
+    if (curStrat === 'sub') {
+      const selSubs = [...document.querySelectorAll('#subGrid .bb.sel')].map(el => ({ name: el.textContent.split('\n')[0].trim(), smi: el.dataset.smiles }));
+      results = generateSub(baseMol.smiles, selSubs);
+    }
+    else if (curStrat === 'combo') {
+      if (!comboMol) { alert('결합할 두 번째 분자를 선택하세요'); setLoading(false); return; }
+      results = generateCombo(baseMol.smiles, comboMol.smiles);
+    }
+    else if (curStrat === 'evo') {
+      const goals = new Set([...document.querySelectorAll('#strat-evo .pchip.sel')].map(e => e.dataset.goal));
+      results = generateEvo(baseMol.smiles, goals);
+    }
+    else if (curStrat === 'random') {
+      const cnt = +document.getElementById('randCount').value;
+      results = generateRandom(baseMol.smiles, cnt);
+    }
+
+    genRes = results;
+    renderGenerated(results, baseMol);
+    if (results[0]) { renderDescriptors(results[0].desc, results[0].label || '최우수 생성 분자'); renderMol(results[0].smiles, results[0].label, results[0].desc); }
+    switchTab('gen', document.querySelectorAll('.tab')[2]);
+    document.getElementById('rTitle').textContent = `생성 완료 — ${results.length}개 신규 후보`;
+    setLoading(false);
+  }, 50);
+}
+
+// ═══════════════════════════════════
+//  RENDER FUNCTIONS
+// ═══════════════════════════════════
+const sc = s => s>=70?'var(--green)':s>=45?'var(--yellow)':'var(--red)';
+const cCls = (v,g,ok) => v<=g?'good':v<=ok?'warn':'bad';
+
 function renderDescriptors(d, name) {
   document.getElementById('rTitle').textContent = name || '분석 결과';
-  const c = (v, g, ok) => v <= g ? 'good' : v <= ok ? 'warn' : 'bad';
-
   document.getElementById('descContent').innerHTML = `
-    <div class="score-wrap">
-      <div class="sec-title">종합 소재 점수</div>
-      <div class="score-row">
-        <div class="score-bg"><div class="score-fill" style="width:${d.score}%"></div></div>
-        <div class="score-num" style="color:${sc(d.score)}">${d.score}</div>
+    <div class="score-sec">
+      <div class="stitle">종합 소재 점수</div>
+      <div class="srow2">
+        <div class="sbg"><div class="sfill" style="width:${d.score}%"></div></div>
+        <div class="snum" style="color:${sc(d.score)}">${d.score}</div>
       </div>
     </div>
-    <div class="desc-grid">
-      ${card('분자량 MW',   d.mw,   c(d.mw,300,500))}
-      ${card('LogP 소수성', d.logp, Math.abs(d.logp)<2?'good':Math.abs(d.logp)<5?'warn':'bad')}
-      ${card('TPSA',        d.tpsa, c(d.tpsa,60,140))}
-      ${card('HBD',         d.hbd,  c(d.hbd,2,5))}
-      ${card('HBA',         d.hba,  c(d.hba,5,10))}
-      ${card('QED',         d.qed,  d.qed>.6?'good':d.qed>.3?'warn':'bad')}
-      ${card('FSP3',        d.fsp3, d.fsp3>.4?'good':d.fsp3>.2?'warn':'bad')}
-      ${card('환 수',        d.rings,'')}
-      ${card('방향족 환',   d.aromr,'')}
-      ${card('중원자 수',   d.heavy,'')}
-      ${card('회전가능결합', d.rot,  c(d.rot,5,10))}
-      ${card('합성난이도',  d.sa,   d.sa<4?'good':d.sa<7?'warn':'bad')}
+    <div class="dgrid">
+      ${dc('분자량 MW',d.mw,cCls(d.mw,300,500))}
+      ${dc('LogP',d.logp,Math.abs(d.logp)<2?'good':Math.abs(d.logp)<5?'warn':'bad')}
+      ${dc('TPSA',d.tpsa,cCls(d.tpsa,60,140))}
+      ${dc('HBD',d.hbd,cCls(d.hbd,2,5))}
+      ${dc('HBA',d.hba,cCls(d.hba,5,10))}
+      ${dc('QED',d.qed,d.qed>.6?'good':d.qed>.3?'warn':'bad')}
+      ${dc('FSP3',d.fsp3,d.fsp3>.4?'good':d.fsp3>.2?'warn':'bad')}
+      ${dc('환 수',d.rings,'')}
+      ${dc('방향족',d.aromr,'')}
+      ${dc('중원자',d.heavy,'')}
+      ${dc('회전결합',d.rot,cCls(d.rot,5,10))}
+      ${dc('합성난이도',d.sa,d.sa<4?'good':d.sa<7?'warn':'bad')}
     </div>
-    <div class="alert ${d.lipinski?'a-green':'a-yellow'}">
-      ${d.lipinski ? '✅ Lipinski Rule of 5 통과 — 생체이용률 양호' : '⚠️ Lipinski 불만족 — 흡수/용해도 주의'}
-    </div>
-    ${d._fallback ? '<div class="alert a-yellow" style="margin-top:6px;">ℹ️ RDKit 로딩 전 — 추정값 표시 중</div>' : ''}
+    <div class="alert ${d.lip?'ag':'ay'}">${d.lip?'✅ Lipinski Rule of 5 통과':'⚠️ Lipinski 불만족 — 흡수/용해도 주의'}</div>
+    ${d._est?'<div class="alert ay" style="margin-top:5px;">ℹ️ RDKit 로딩 전 — 추정값</div>':''}
   `;
 }
+const dc = (l,v,cls) => `<div class="dc"><div class="dl">${l}</div><div class="dv ${cls}">${v}</div></div>`;
 
-const card = (lbl, val, cls) =>
-  `<div class="desc-card"><div class="lbl">${lbl}</div><div class="val ${cls}">${val}</div></div>`;
-const sc   = s => s>=70 ? 'var(--green)' : s>=45 ? 'var(--yellow)' : 'var(--red)';
-
-// ═══════════════════════════════════════
-//  RENDER RANKING
-// ═══════════════════════════════════════
-function renderRanking(results) {
-  const rows = results.map((r, i) => {
-    const rk = i+1;
-    const bc = rk===1?'r1':rk===2?'r2':rk===3?'r3':'rx';
+function renderRanking(res) {
+  const rows = res.map((r,i) => {
+    const rk=i+1, bc=rk===1?'rk1':rk===2?'rk2':rk===3?'rk3':'rkx';
     return `<tr style="cursor:pointer" onclick="viewRank(${i})">
-      <td><span class="rbadge ${bc}">${rk}</span></td>
-      <td><b>${r.name}</b><br><span style="font-size:.66rem;color:var(--muted);font-family:monospace">${r.smiles.substring(0,22)}${r.smiles.length>22?'…':''}</span></td>
+      <td><span class="rk ${bc}">${rk}</span></td>
+      <td><b>${r.name||r.smiles.substring(0,12)}</b><br><span style="font-size:.62rem;color:var(--muted);font-family:monospace">${r.smiles.substring(0,20)}${r.smiles.length>20?'…':''}</span></td>
       <td><b style="color:${sc(r.desc?.score||0)}">${r.desc?.score??'—'}</b></td>
-      <td>${r.desc?.mw??'—'}</td>
-      <td>${r.desc?.logp??'—'}</td>
-      <td>${r.desc?.qed??'—'}</td>
+      <td>${r.desc?.mw??'—'}</td><td>${r.desc?.logp??'—'}</td><td>${r.desc?.qed??'—'}</td>
     </tr>`;
   }).join('');
-
   document.getElementById('rankContent').innerHTML = `
-    <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;">행 클릭 → 구조식 및 물성 표시</div>
-    <div class="rank-scroll">
-      <table class="rank-table">
-        <thead><tr><th>#</th><th>후보</th><th>점수</th><th>MW</th><th>LogP</th><th>QED</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
+    <div style="font-size:.7rem;color:var(--muted);margin-bottom:5px;">행 클릭 → 구조식·물성 표시</div>
+    <div class="rscroll"><table class="rtable">
+      <thead><tr><th>#</th><th>후보</th><th>점수</th><th>MW</th><th>LogP</th><th>QED</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>`;
 }
-
 function viewRank(i) {
-  const r = batchResults[i];
-  if (!r?.ok) return;
-  renderDescriptors(r.desc, r.name);
-  renderMol(r.smiles, r.name, r.desc);
+  const r = batchRes[i]; if (!r?.ok) return;
+  renderDescriptors(r.desc, r.name); renderMol(r.smiles, r.name, r.desc);
   switchTab('desc', document.querySelectorAll('.tab')[0]);
 }
 
-// ═══════════════════════════════════════
-//  RENDER REPORT
-// ═══════════════════════════════════════
-function renderReport(results) {
-  const top = results.filter(r=>r.ok).sort((a,b)=>(b.desc?.score||0)-(a.desc?.score||0))[0];
+function renderGenerated(results, base) {
+  if (!results.length) { document.getElementById('genContent').innerHTML = '<div class="alert ay">유효한 분자를 생성하지 못했습니다. 다른 전략을 시도하세요.</div>'; return; }
+
+  const baseDesc = computeDesc(base.smiles);
+  const cards = results.map((r,i) => {
+    const isTop = i === 0;
+    const improvement = baseDesc ? (r.desc.score - baseDesc.score).toFixed(1) : null;
+    const badge = isTop ? '<span class="gen-badge gb-top">🏆 최우수</span>' : '<span class="gen-badge gb-new">✨ 신규</span>';
+    const impTxt = improvement !== null ? `<span style="font-size:.64rem;color:${+improvement>=0?'var(--green)':'var(--red)'};">${+improvement>=0?'+':''}${improvement}pt</span>` : '';
+    return `<div class="gen-card ${isTop?'top':''}" onclick="viewGen(${i})">
+      <div class="gen-svg">${miniSvg(r.smiles)}</div>
+      <div class="gen-info">
+        <div class="gen-name">${(r.label||r.smiles).substring(0,22)}</div>
+        <div class="gen-score" style="color:${sc(r.desc.score)}">${r.desc.score}점 ${impTxt}</div>
+        ${badge}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('genContent').innerHTML = `
+    <div class="alert am" style="margin-bottom:10px;">
+      🧬 기반 분자(${base.name}, ${baseDesc?.score??'?'}점)로부터 <b>${results.length}개</b> 신규 후보 생성
+    </div>
+    <div class="gen-grid">${cards}</div>
+  `;
+}
+function viewGen(i) {
+  const r = genRes[i]; if (!r) return;
+  renderDescriptors(r.desc, r.label || r.smiles.substring(0,20));
+  renderMol(r.smiles, r.label, r.desc);
+  switchTab('desc', document.querySelectorAll('.tab')[0]);
+}
+
+function renderReport(res) {
+  const top = res.filter(r=>r.ok||r.desc).sort((a,b)=>(b.desc?.score||0)-(a.desc?.score||0))[0];
   if (!top) return;
   const d = top.desc;
-
   const warns = [];
-  if (d.mw > 500) warns.push('⚠️ 분자량 500 초과 — 막 투과성 저하 가능');
-  if (Math.abs(d.logp) > 5) warns.push('⚠️ LogP 극단값 — 용해도/독성 우려');
-  if (d.sa > 7) warns.push('⚠️ 합성 난이도 높음 — 다단계 공정 필요');
-  if (d.tpsa > 140) warns.push('⚠️ TPSA 140↑ — 세포막 투과 어려움');
-
+  if (d.mw>500) warns.push('⚠️ 분자량 500↑ — 막 투과성 저하');
+  if (Math.abs(d.logp)>5) warns.push('⚠️ LogP 극단 — 용해도/독성 우려');
+  if (d.sa>7) warns.push('⚠️ 합성 난이도 높음');
+  if (d.tpsa>140) warns.push('⚠️ TPSA 140↑ — 세포막 투과 어려움');
   const steps = [];
-  if (d.qed > 0.5)  steps.push('✅ QED 우수 — DDS 응용 검토 권장');
-  if (d.fsp3 > 0.4) steps.push('✅ 높은 sp³ 비율 — 입체적 다양성 확보');
-  if (d.aromr >= 1) steps.push('✅ 방향족 환 존재 — π-π 스태킹 활용 가능');
-  if (d.rings === 0)steps.push('🔧 환형 구조 도입 시 강도 향상 기대');
-  steps.push('🔬 DFT 계산으로 HOMO-LUMO 갭 검증 필요');
-  steps.push('🧫 MTT assay 세포독성 시험 계획 수립');
-  steps.push('♻️ 생분해성 및 환경 위해성 평가 (OECD 301)');
-
+  if (d.qed>.5)  steps.push('✅ QED 우수 — DDS 응용 검토');
+  if (d.fsp3>.4) steps.push('✅ 높은 sp³ 비율 — 입체적 다양성');
+  if (d.aromr>=1)steps.push('✅ 방향족 환 — π-π 스태킹 활용 가능');
+  if (d.rings===0)steps.push('🔧 환형 구조 도입 시 강도 향상 가능');
+  steps.push('🔬 DFT 계산 — HOMO-LUMO 갭 검증');
+  steps.push('🧫 MTT assay — 세포독성 시험');
+  steps.push('♻️ OECD 301 — 생분해성 평가');
   document.getElementById('reportContent').innerHTML = `
-    <div style="margin-bottom:10px;">
-      <div class="sec-title">최우수 후보</div>
-      <div style="font-size:.95rem;font-weight:700;margin-top:3px;">${top.name}</div>
-      <div style="font-size:.68rem;color:var(--muted);font-family:monospace;margin-top:2px;word-break:break-all">${top.smiles}</div>
+    <div style="margin-bottom:9px;">
+      <div class="stitle">최우수 후보</div>
+      <div style="font-size:.92rem;font-weight:700;margin-top:3px;">${top.name||top.label||'생성 후보'}</div>
+      <div style="font-size:.66rem;color:var(--muted);font-family:monospace;word-break:break-all;margin-top:2px;">${top.smiles}</div>
     </div>
-    <div style="margin-bottom:10px;">
-      <div class="sec-title">종합 평가</div>
-      <div style="font-size:.8rem;margin-top:5px;line-height:1.6;">
-        종합 점수 <b style="color:${sc(d.score)}">${d.score}/100</b>.
-        ${d.score>=70?'신소재 응용 가능성 높음.':d.score>=45?'추가 구조 최적화 권장.':'상당한 개선 필요.'}
-        Lipinski ${d.lipinski?'✅ 통과':'⚠️ 미통과'} · 합성 난이도 ${d.sa}/10 · 환경 점수 ${d.env}/10.
-      </div>
+    <div style="margin-bottom:9px;">
+      <div class="stitle">종합 평가</div>
+      <div style="font-size:.78rem;margin-top:4px;line-height:1.6;">점수 <b style="color:${sc(d.score)}">${d.score}/100</b>. ${d.score>=70?'신소재 응용 가능성 높음.':d.score>=45?'추가 최적화 권장.':'구조 개선 필요.'} Lipinski ${d.lip?'✅':'⚠️'} · 합성 ${d.sa}/10 · 환경 ${d.env}/10.</div>
     </div>
-    ${warns.length ? `<div style="margin-bottom:10px;">${warns.map(w=>`<div class="alert a-yellow">${w}</div>`).join('')}</div>`
-                   : `<div class="alert a-green" style="margin-bottom:10px;">✅ 주요 경고 없음</div>`}
-    <div>
-      <div class="sec-title">다음 검증 단계</div>
-      ${steps.map(s=>`<div style="font-size:.78rem;padding:5px 0;border-bottom:1px solid var(--border);">${s}</div>`).join('')}
-    </div>
-    ${results.length>1?`<div style="margin-top:10px;font-size:.75rem;color:var(--muted);">분석 ${results.length}종 · 평균 점수 ${Math.round(results.filter(r=>r.ok).reduce((s,r)=>s+(r.desc?.score||0),0)/results.filter(r=>r.ok).length)}점</div>`:''}
+    ${warns.length?`<div style="margin-bottom:9px;">${warns.map(w=>`<div class="alert ay">${w}</div>`).join('')}</div>`:`<div class="alert ag" style="margin-bottom:9px;">✅ 주요 경고 없음</div>`}
+    <div class="stitle">다음 단계</div>
+    ${steps.map(s=>`<div style="font-size:.76rem;padding:4px 0;border-bottom:1px solid var(--border);">${s}</div>`).join('')}
+    ${res.length>1?`<div style="margin-top:8px;font-size:.72rem;color:var(--muted);">총 ${res.length}종 분석 · 평균 ${Math.round(res.filter(r=>r.desc).reduce((s,r)=>s+(r.desc?.score||0),0)/res.filter(r=>r.desc).length)}점</div>`:''}
   `;
 }
 
-// ═══════════════════════════════════════
+// ═══════════════════════════════════
 //  UTILS
-// ═══════════════════════════════════════
+// ═══════════════════════════════════
 function switchTab(id, el) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tc').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   if (el) el.classList.add('active');
 }
-
 function setLoading(on) {
-  document.getElementById('rSpinner').style.display = on ? '' : 'none';
-  document.getElementById('analyzeBtn').disabled = on;
+  document.getElementById('rSpin').style.display = on ? '' : 'none';
+  document.getElementById('desGenerateBtn').disabled = on || !baseMol;
+  document.getElementById('discAnalyzeBtn').disabled = on || !(discSel.size + discCustomArr.length);
 }
 </script>
 </body>
